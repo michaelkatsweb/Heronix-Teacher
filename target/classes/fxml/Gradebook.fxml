@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.heronix.teacher.ui.controller.GradebookController"
+      spacing="20" styleClass="content-view">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Label text="📚 Gradebook" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button text="📥 Export" onAction="#exportGrades" styleClass="button-secondary" prefHeight="35"/>
+        <Button text="🔄 Refresh" onAction="#refresh" styleClass="button-secondary" prefHeight="35"/>
+    </HBox>
+
+    <!-- Quick Stats -->
+    <GridPane hgap="15" vgap="15">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+        </columnConstraints>
+
+        <!-- Total Students -->
+        <VBox styleClass="card, stat-card" spacing="8" GridPane.columnIndex="0">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="👥" style="-fx-font-size: 24px;"/>
+            <Label fx:id="totalStudentsLabel" text="0" styleClass="stat-number" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+            <Label text="Students" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Total Assignments -->
+        <VBox styleClass="card, stat-card" spacing="8" GridPane.columnIndex="1">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="📝" style="-fx-font-size: 24px;"/>
+            <Label fx:id="totalAssignmentsLabel" text="0" styleClass="stat-number" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+            <Label text="Assignments" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Average GPA -->
+        <VBox styleClass="card, stat-card" spacing="8" GridPane.columnIndex="2">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="📊" style="-fx-font-size: 24px;"/>
+            <Label fx:id="averageGpaLabel" text="0.00" styleClass="stat-number, success-text" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+            <Label text="Average GPA" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Pending Sync -->
+        <VBox styleClass="card, stat-card" spacing="8" GridPane.columnIndex="3">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="⏳" style="-fx-font-size: 24px;"/>
+            <Label fx:id="pendingGradesLabel" text="0" styleClass="stat-number, warning-text" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+            <Label text="Pending Sync" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+    </GridPane>
+
+    <!-- Filters and Actions -->
+    <VBox styleClass="card" spacing="15">
+        <padding>
+            <Insets top="15" right="15" bottom="15" left="15"/>
+        </padding>
+
+        <HBox spacing="15" alignment="CENTER_LEFT">
+            <!-- Search -->
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Search Students" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                <TextField fx:id="searchField" promptText="Search by name or ID..." prefWidth="300"/>
+            </VBox>
+
+            <!-- Course Filter -->
+            <VBox spacing="5">
+                <Label text="Course" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                <ComboBox fx:id="courseFilterCombo" prefWidth="200"/>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Assignment Actions -->
+            <VBox spacing="5">
+                <Label text="Assignment Actions" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                <HBox spacing="10">
+                    <Button fx:id="addAssignmentBtn" text="+ Add" onAction="#addAssignment" styleClass="button-success" prefHeight="35"/>
+                    <Button fx:id="editAssignmentBtn" text="✏ Edit" onAction="#editAssignment" styleClass="button-primary" prefHeight="35"/>
+                    <Button fx:id="deleteAssignmentBtn" text="🗑 Delete" onAction="#deleteAssignment" styleClass="button-danger" prefHeight="35"/>
+                </HBox>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <!-- Gradebook Table -->
+    <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="15" right="15" bottom="15" left="15"/>
+        </padding>
+
+        <Label text="Student Grades (Click cell to edit)" styleClass="section-title" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+
+        <TableView fx:id="gradebookTable" VBox.vgrow="ALWAYS" editable="true" styleClass="gradebook-table">
+            <columns>
+                <TableColumn fx:id="studentNameColumn" text="Student Name" prefWidth="150" sortable="true"/>
+                <TableColumn fx:id="studentIdColumn" text="Student ID" prefWidth="100" sortable="true"/>
+                <TableColumn fx:id="gradeLevelColumn" text="Grade" prefWidth="60" sortable="true"/>
+                <TableColumn fx:id="currentGpaColumn" text="GPA" prefWidth="70" sortable="true"/>
+                <!-- Assignment columns added dynamically -->
+            </columns>
+
+            <placeholder>
+                <VBox spacing="10" alignment="CENTER" style="-fx-padding: 40;">
+                    <Label text="📚" style="-fx-font-size: 48px;"/>
+                    <Label text="No students found" styleClass="text-secondary"/>
+                    <Label text="Students will appear here when synced from admin server" styleClass="text-muted" style="-fx-font-size: 11px;"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+
+        <!-- Legend -->
+        <HBox spacing="30" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
+            <HBox spacing="8" alignment="CENTER">
+                <Label text="●" styleClass="success-text" style="-fx-font-size: 14px;"/>
+                <Label text="80-100% (A/B)" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            </HBox>
+            <HBox spacing="8" alignment="CENTER">
+                <Label text="●" styleClass="warning-text" style="-fx-font-size: 14px;"/>
+                <Label text="60-79% (C/D)" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            </HBox>
+            <HBox spacing="8" alignment="CENTER">
+                <Label text="●" styleClass="danger-text" style="-fx-font-size: 14px;"/>
+                <Label text="&lt; 60% (F)" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            </HBox>
+            <Separator orientation="VERTICAL" prefHeight="15"/>
+            <Label text="Double-click cell to enter/edit grade" styleClass="text-secondary" style="-fx-font-size: 11px; -fx-font-style: italic;"/>
+        </HBox>
+    </VBox>
+
+</VBox>

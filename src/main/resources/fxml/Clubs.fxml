@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.heronix.teacher.ui.controller.ClubsController"
+      spacing="15" style="-fx-padding: 20;">
+
+    <!-- Page Header -->
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <Label text="🎭 Club Management" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="🔄 Sync" fx:id="syncBtn" onAction="#handleSync"
+                styleClass="button-primary" prefHeight="35" prefWidth="100"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Tab Pane for Clubs and Attendance -->
+    <TabPane fx:id="clubTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+
+        <!-- Club Management Tab -->
+        <Tab text="📋 Club Management" closable="false">
+            <VBox spacing="15" style="-fx-padding: 15;">
+
+                <!-- Filter Bar -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Filter:" styleClass="text-bold"/>
+                    <ComboBox fx:id="categoryFilterCombo" promptText="All Categories" prefWidth="150">
+                        <tooltip>
+                            <Tooltip text="Filter by category"/>
+                        </tooltip>
+                    </ComboBox>
+
+                    <ComboBox fx:id="statusFilterCombo" promptText="All Status" prefWidth="120">
+                        <tooltip>
+                            <Tooltip text="Filter by active/inactive"/>
+                        </tooltip>
+                    </ComboBox>
+
+                    <ComboBox fx:id="capacityFilterCombo" promptText="Capacity" prefWidth="150">
+                        <tooltip>
+                            <Tooltip text="Filter by capacity status"/>
+                        </tooltip>
+                    </ComboBox>
+
+                    <Button text="Clear Filters" onAction="#handleClearFilters" styleClass="button-secondary" prefHeight="30"/>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <TextField fx:id="searchField" promptText="Search clubs..." prefWidth="200"/>
+                </HBox>
+
+                <!-- Summary Cards -->
+                <HBox spacing="15">
+                    <!-- Total Clubs Card -->
+                    <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+                        <Label text="Total Clubs" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="totalClubsLabel" text="0" styleClass="text-bold" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                        <Label text="Active clubs" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                    </VBox>
+
+                    <!-- Total Members Card -->
+                    <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+                        <Label text="Total Members" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="totalMembersLabel" text="0" styleClass="success-text" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                        <Label text="Students enrolled" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                    </VBox>
+
+                    <!-- Available Spots Card -->
+                    <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+                        <Label text="Available Spots" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="availableSpotsLabel" text="0" styleClass="warning-text" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                        <Label text="Open positions" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                    </VBox>
+
+                    <!-- Categories Card -->
+                    <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS" style="-fx-padding: 15;">
+                        <Label text="Categories" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="categoriesLabel" text="0" styleClass="text-bold" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                        <Label text="Club types" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Clubs Table -->
+                <VBox VBox.vgrow="ALWAYS" styleClass="card" style="-fx-padding: 0;">
+                    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 15 15 10 15;">
+                        <Label text="All Clubs" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="clubCountLabel" text="0 clubs" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                    </HBox>
+
+                    <TableView fx:id="clubsTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="clubNameColumn" text="Club Name" prefWidth="200"/>
+                            <TableColumn fx:id="categoryColumn" text="Category" prefWidth="120"/>
+                            <TableColumn fx:id="advisorColumn" text="Advisor" prefWidth="150"/>
+                            <TableColumn fx:id="meetingDayColumn" text="Meeting Day" prefWidth="100"/>
+                            <TableColumn fx:id="meetingTimeColumn" text="Time" prefWidth="80"/>
+                            <TableColumn fx:id="locationColumn" text="Location" prefWidth="100"/>
+                            <TableColumn fx:id="enrollmentColumn" text="Enrollment" prefWidth="100"/>
+                            <TableColumn fx:id="capacityColumn" text="Capacity" prefWidth="80"/>
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="60"/>
+                        </columns>
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40;">
+                                <Label text="🎭" style="-fx-font-size: 48px;"/>
+                                <Label text="No clubs found" styleClass="text-secondary" style="-fx-font-size: 14px;"/>
+                                <Label text="Sync with server to load club data" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            </VBox>
+                        </placeholder>
+                        <contextMenu>
+                            <ContextMenu>
+                                <items>
+                                    <MenuItem text="View Members" onAction="#handleViewMembers"/>
+                                    <MenuItem text="Manage Enrollment" onAction="#handleManageEnrollment"/>
+                                    <SeparatorMenuItem/>
+                                    <MenuItem text="View Details" onAction="#handleViewDetails"/>
+                                </items>
+                            </ContextMenu>
+                        </contextMenu>
+                    </TableView>
+                </VBox>
+
+                <!-- Action Buttons -->
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="👥 View Members" onAction="#handleViewMembers" styleClass="button-secondary" prefHeight="35" prefWidth="130"/>
+                    <Button text="📊 Reports" onAction="#handleReports" styleClass="button-secondary" prefHeight="35" prefWidth="130"/>
+                    <Button text="📤 Export CSV" onAction="#handleExport" styleClass="button-secondary" prefHeight="35" prefWidth="130"/>
+                </HBox>
+
+            </VBox>
+        </Tab>
+
+        <!-- Club Attendance Tab -->
+        <Tab text="✓ Club Attendance" closable="false">
+            <VBox spacing="15" style="-fx-padding: 15;">
+
+                <!-- Attendance Header -->
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="Select Club:" styleClass="text-bold"/>
+                    <ComboBox fx:id="attendanceClubCombo" promptText="Choose a club..." prefWidth="250">
+                        <tooltip>
+                            <Tooltip text="Select club to take attendance"/>
+                        </tooltip>
+                    </ComboBox>
+
+                    <Label text="Date:" styleClass="text-bold"/>
+                    <DatePicker fx:id="attendanceDatePicker" prefWidth="140"/>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <Button text="✓ Mark All Present" onAction="#handleMarkAllPresent" styleClass="button-success" prefHeight="35" prefWidth="150"/>
+                    <Button text="💾 Save Attendance" onAction="#handleSaveAttendance" styleClass="button-primary" prefHeight="35" prefWidth="150"/>
+                </HBox>
+
+                <!-- Club Info Card -->
+                <VBox fx:id="clubInfoCard" styleClass="card" spacing="8" style="-fx-padding: 15;" managed="false" visible="false">
+                    <HBox spacing="20">
+                        <VBox spacing="5">
+                            <Label text="Club:" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            <Label fx:id="selectedClubNameLabel" text="-" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Advisor:" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            <Label fx:id="selectedAdvisorLabel" text="-" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Meeting Time:" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            <Label fx:id="selectedMeetingTimeLabel" text="-" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label text="Members:" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            <Label fx:id="selectedMembersLabel" text="-" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <!-- Attendance Table -->
+                <VBox VBox.vgrow="ALWAYS" styleClass="card" style="-fx-padding: 0;">
+                    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 15 15 10 15;">
+                        <Label text="Member Attendance" styleClass="text-bold" style="-fx-font-size: 14px;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="attendanceStatsLabel" text="Present: 0 | Absent: 0" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                    </HBox>
+
+                    <TableView fx:id="attendanceTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="memberNameColumn" text="Student Name" prefWidth="200"/>
+                            <TableColumn fx:id="memberIdColumn" text="Student ID" prefWidth="100"/>
+                            <TableColumn fx:id="gradeLevelColumn" text="Grade" prefWidth="60"/>
+                            <TableColumn fx:id="attendanceStatusColumn" text="Attendance" prefWidth="150"/>
+                            <TableColumn fx:id="notesColumn" text="Notes" prefWidth="250"/>
+                            <TableColumn fx:id="timeColumn" text="Time Recorded" prefWidth="120"/>
+                        </columns>
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40;">
+                                <Label text="📋" style="-fx-font-size: 48px;"/>
+                                <Label text="Select a club to take attendance" styleClass="text-secondary" style="-fx-font-size: 14px;"/>
+                                <Label text="Choose a club from the dropdown above" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                            </VBox>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+
+                <!-- Attendance Summary -->
+                <HBox spacing="15">
+                    <VBox styleClass="card" spacing="5" HBox.hgrow="ALWAYS" style="-fx-padding: 12;">
+                        <Label text="Present" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="presentCountLabel" text="0" styleClass="success-text" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox styleClass="card" spacing="5" HBox.hgrow="ALWAYS" style="-fx-padding: 12;">
+                        <Label text="Absent" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="absentCountLabel" text="0" styleClass="error-text" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox styleClass="card" spacing="5" HBox.hgrow="ALWAYS" style="-fx-padding: 12;">
+                        <Label text="Excused" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="excusedCountLabel" text="0" styleClass="warning-text" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox styleClass="card" spacing="5" HBox.hgrow="ALWAYS" style="-fx-padding: 12;">
+                        <Label text="Attendance Rate" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="attendanceRateLabel" text="0%" styleClass="text-bold" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    </VBox>
+                </HBox>
+
+            </VBox>
+        </Tab>
+
+    </TabPane>
+
+</VBox>

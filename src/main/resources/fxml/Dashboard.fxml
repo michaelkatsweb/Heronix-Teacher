@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.heronix.teacher.ui.controller.DashboardController"
+      spacing="20" styleClass="content-view">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Welcome Section -->
+    <VBox spacing="5">
+        <Label fx:id="welcomeLabel" text="Welcome back, Teacher!"
+               styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+        <Label fx:id="todayDateLabel" text="Today: November 28, 2025"
+               styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+    </VBox>
+
+    <!-- Quick Stats Cards -->
+    <GridPane hgap="20" vgap="20">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+        </columnConstraints>
+
+        <!-- Total Students Card -->
+        <VBox styleClass="card, stat-card" spacing="10" GridPane.columnIndex="0">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            <Label text="👥" style="-fx-font-size: 32px;"/>
+            <Label fx:id="totalStudentsLabel" text="0"
+                   styleClass="stat-number" style="-fx-font-size: 36px; -fx-font-weight: bold;"/>
+            <Label text="Total Students" styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+        </VBox>
+
+        <!-- Classes Card -->
+        <VBox styleClass="card, stat-card" spacing="10" GridPane.columnIndex="1">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            <Label text="📚" style="-fx-font-size: 32px;"/>
+            <Label fx:id="totalClassesLabel" text="0"
+                   styleClass="stat-number" style="-fx-font-size: 36px; -fx-font-weight: bold;"/>
+            <Label text="Classes" styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+        </VBox>
+
+        <!-- Pending Grades Card -->
+        <VBox styleClass="card, stat-card" spacing="10" GridPane.columnIndex="2">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            <Label text="📝" style="-fx-font-size: 32px;"/>
+            <Label fx:id="pendingGradesLabel" text="0"
+                   styleClass="stat-number, warning-text" style="-fx-font-size: 36px; -fx-font-weight: bold;"/>
+            <Label text="Pending Grades" styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+        </VBox>
+
+        <!-- Active Hall Passes Card -->
+        <VBox styleClass="card, stat-card" spacing="10" GridPane.columnIndex="3">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            <Label text="🎫" style="-fx-font-size: 32px;"/>
+            <Label fx:id="activeHallPassesLabel" text="0"
+                   styleClass="stat-number, primary-text" style="-fx-font-size: 36px; -fx-font-weight: bold;"/>
+            <Label text="Active Hall Passes" styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+        </VBox>
+    </GridPane>
+
+    <!-- Two Column Layout -->
+    <GridPane hgap="20" vgap="20" VBox.vgrow="ALWAYS">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50"/>
+            <ColumnConstraints percentWidth="50"/>
+        </columnConstraints>
+
+        <!-- Today's Schedule -->
+        <VBox styleClass="card" spacing="15" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="📅 Today's Schedule"
+                   styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <ListView fx:id="scheduleListView" VBox.vgrow="ALWAYS" styleClass="schedule-list"/>
+        </VBox>
+
+        <!-- Recent Activity -->
+        <VBox styleClass="card" spacing="15" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="🔔 Recent Activity"
+                   styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <ListView fx:id="activityListView" VBox.vgrow="ALWAYS" styleClass="activity-list"/>
+        </VBox>
+
+        <!-- Attendance Overview -->
+        <VBox styleClass="card" spacing="15" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="✓ Attendance Overview"
+                   styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <HBox spacing="30" alignment="CENTER">
+                <VBox spacing="5" alignment="CENTER">
+                    <Label fx:id="presentTodayLabel" text="0"
+                           styleClass="success-text" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+                    <Label text="Present" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                </VBox>
+                <VBox spacing="5" alignment="CENTER">
+                    <Label fx:id="absentTodayLabel" text="0"
+                           styleClass="danger-text" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+                    <Label text="Absent" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                </VBox>
+                <VBox spacing="5" alignment="CENTER">
+                    <Label fx:id="tardyTodayLabel" text="0"
+                           styleClass="warning-text" style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+                    <Label text="Tardy" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                </VBox>
+            </HBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Button text="Take Attendance" onAction="#openAttendance"
+                    styleClass="button-primary" maxWidth="Infinity" prefHeight="40"/>
+        </VBox>
+
+        <!-- Medical Conditions / IEP / 504 Summary -->
+        <VBox styleClass="card" spacing="15" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="🏥 Student Support Summary"
+                   styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <VBox spacing="12">
+                <!-- IEP Students -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="📋" style="-fx-font-size: 20px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="IEP Students" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="iepStudentsLabel" text="0 students"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <Label fx:id="iepPercentLabel" text="0%"
+                           styleClass="primary-text" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                </HBox>
+
+                <Separator/>
+
+                <!-- 504 Plan Students -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="📄" style="-fx-font-size: 20px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="504 Plan Students" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="plan504StudentsLabel" text="0 students"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <Label fx:id="plan504PercentLabel" text="0%"
+                           styleClass="primary-text" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                </HBox>
+
+                <Separator/>
+
+                <!-- Total Students with Support -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="🎯" style="-fx-font-size: 20px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label text="Students Requiring Support" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+                        <Label fx:id="totalSupportStudentsLabel" text="0 students"
+                               styleClass="warning-text" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <Label fx:id="totalSupportPercentLabel" text="0%"
+                           styleClass="warning-text" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                </HBox>
+            </VBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Button text="View Student Details" onAction="#viewStudentSupport"
+                    styleClass="button-primary" maxWidth="Infinity" prefHeight="35"/>
+        </VBox>
+
+        <!-- Quick Actions -->
+        <VBox styleClass="card" spacing="15" GridPane.columnIndex="0" GridPane.rowIndex="2">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <Label text="⚡ Quick Actions"
+                   styleClass="section-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+
+            <Button text="📝 Enter Grades" onAction="#openGradebook"
+                    styleClass="button-primary" maxWidth="Infinity" prefHeight="45"/>
+
+            <Button text="🎫 Issue Hall Pass" onAction="#openHallPass"
+                    styleClass="button-primary" maxWidth="Infinity" prefHeight="45"/>
+
+            <Button text="📊 View Reports" onAction="#openReports"
+                    styleClass="button-secondary" maxWidth="Infinity" prefHeight="45"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <HBox spacing="10">
+                <Button text="📥 Import Data" onAction="#importData"
+                        styleClass="button-secondary" maxWidth="Infinity" prefHeight="35" HBox.hgrow="ALWAYS"/>
+                <Button text="📤 Export Data" onAction="#exportData"
+                        styleClass="button-secondary" maxWidth="Infinity" prefHeight="35" HBox.hgrow="ALWAYS"/>
+            </HBox>
+        </VBox>
+    </GridPane>
+
+</VBox>

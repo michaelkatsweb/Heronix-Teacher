@@ -1,0 +1,397 @@
+package com.heronix.teacher.ui.controller;
+
+import com.heronix.teacher.model.domain.Teacher;
+import com.heronix.teacher.service.AutoSyncService;
+import com.heronix.teacher.service.NetworkMonitorService;
+import com.heronix.teacher.service.SessionManager;
+import com.heronix.teacher.util.ThemeManager;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Timer;
+import java.util.TimerTask;
+
+/**
+ * Main controller for Heronix-Teacher application
+ *
+ * Manages:
+ * - Main window layout
+ * - Navigation between views
+ * - Theme switching
+ * - Network status monitoring
+ * - Sync status display
+ *
+ * @author EduScheduler Team
+ * @version 1.0.0
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class MainController {
+
+    private final ApplicationContext applicationContext;
+    private final ThemeManager themeManager;
+    private final SessionManager sessionManager;
+    private final AutoSyncService autoSyncService;
+    private final NetworkMonitorService networkMonitor;
+
+    @FXML private BorderPane mainRoot;
+    @FXML private StackPane contentArea;
+
+    // Header elements
+    @FXML private Label teacherNameLabel;
+    @FXML private Label teacherSubjectLabel;
+    @FXML private Label networkStatusIcon;
+    @FXML private Label networkStatusLabel;
+    @FXML private Button themeToggleBtn;
+
+    // Navigation buttons
+    @FXML private Button dashboardBtn;
+    @FXML private Button gradebookBtn;
+    @FXML private Button attendanceBtn;
+    @FXML private Button hallpassBtn;
+    @FXML private Button clubsBtn;
+    @FXML private Button walletBtn;
+    @FXML private Button commHubBtn;
+
+    // Status bar
+    @FXML private Label statusMessageLabel;
+    @FXML private Label pendingSyncLabel;
+    @FXML private Label lastSyncLabel;
+
+    private Timer networkCheckTimer;
+    private String currentView = "dashboard";
+
+    /**
+     * Initialize controller
+     */
+    @FXML
+    public void initialize() {
+        log.info("Initializing Main Controller");
+
+        // Load teacher information
+        loadTeacherInfo();
+
+        // Load dashboard by default
+        showDashboard();
+
+        // Start network status monitoring
+        startNetworkMonitoring();
+
+        // Update sync status display
+        updateSyncStatus();
+
+        log.info("Main Controller initialized successfully");
+    }
+
+    /**
+     * Load teacher information from database/session
+     */
+    private void loadTeacherInfo() {
+        // Load teacher from session
+        Teacher currentTeacher = sessionManager.getCurrentTeacher();
+
+        if (currentTeacher != null) {
+            // Display teacher information from database
+            teacherNameLabel.setText(currentTeacher.getFullName());
+            teacherSubjectLabel.setText(currentTeacher.getDepartment() != null ?
+                currentTeacher.getDepartment() : "Teacher");
+
+            log.info("Loaded teacher: {} - {}",
+                currentTeacher.getFullName(),
+                currentTeacher.getDepartment());
+        } else {
+            // No teacher logged in - use placeholder
+            teacherNameLabel.setText("Guest User");
+            teacherSubjectLabel.setText("Not Logged In");
+            log.warn("No teacher in session - showing placeholder");
+        }
+    }
+
+    /**
+     * Toggle between dark and light themes
+     */
+    @FXML
+    public void toggleTheme() {
+        log.info("Toggling theme");
+        themeManager.toggleTheme(mainRoot.getScene());
+
+        // Update theme button icon
+        String currentTheme = themeManager.getCurrentTheme();
+        themeToggleBtn.setText("dark".equalsIgnoreCase(currentTheme) ? "🌙" : "☀");
+    }
+
+    /**
+     * Show Dashboard view
+     */
+    @FXML
+    public void showDashboard() {
+        loadView("Dashboard", dashboardBtn);
+    }
+
+    /**
+     * Show Gradebook view
+     */
+    @FXML
+    public void showGradebook() {
+        loadView("Gradebook", gradebookBtn);
+    }
+
+    /**
+     * Show Attendance view
+     */
+    @FXML
+    public void showAttendance() {
+        loadView("Attendance", attendanceBtn);
+    }
+
+    /**
+     * Show Hall Pass view
+     */
+    @FXML
+    public void showHallPass() {
+        loadView("HallPass", hallpassBtn);
+    }
+
+    /**
+     * Show Clubs view
+     */
+    @FXML
+    public void showClubs() {
+        loadView("Clubs", clubsBtn);
+    }
+
+    /**
+     * Show Class Wallet view
+     */
+    @FXML
+    public void showWallet() {
+        loadView("ClassWallet", walletBtn);
+    }
+
+    /**
+     * Show Communication Hub view
+     */
+    @FXML
+    public void showCommunicationHub() {
+        loadView("CommunicationHub", commHubBtn);
+    }
+
+    /**
+     * Load a view into content area
+     */
+    private void loadView(String viewName, Button activeButton) {
+        try {
+            log.info("Loading view: {}", viewName);
+
+            // Load FXML
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/fxml/" + viewName + ".fxml")
+            );
+            loader.setControllerFactory(applicationContext::getBean);
+
+            Node view = loader.load();
+
+            // Clear content area and add new view
+            contentArea.getChildren().clear();
+            contentArea.getChildren().add(view);
+
+            // Update navigation button states
+            updateNavButtonStates(activeButton);
+
+            currentView = viewName.toLowerCase();
+            updateStatusMessage("Loaded " + viewName);
+
+            log.info("View loaded successfully: {}", viewName);
+
+        } catch (Exception e) {
+            log.error("Failed to load view: " + viewName, e);
+            updateStatusMessage("Error loading " + viewName);
+        }
+    }
+
+    /**
+     * Update navigation button states
+     */
+    private void updateNavButtonStates(Button activeButton) {
+        // Remove active class from all buttons
+        dashboardBtn.getStyleClass().remove("nav-button-active");
+        gradebookBtn.getStyleClass().remove("nav-button-active");
+        attendanceBtn.getStyleClass().remove("nav-button-active");
+        hallpassBtn.getStyleClass().remove("nav-button-active");
+
+        // Add active class to current button
+        if (activeButton != null && !activeButton.getStyleClass().contains("nav-button-active")) {
+            activeButton.getStyleClass().add("nav-button-active");
+        }
+    }
+
+    /**
+     * Sync now action - triggers immediate sync with main EduScheduler server
+     */
+    @FXML
+    public void syncNow() {
+        log.info("Manual sync triggered");
+        updateStatusMessage("Syncing with main server...");
+
+        // Trigger immediate sync with main EduScheduler server
+        new Thread(() -> {
+            try {
+                autoSyncService.syncNow();
+                Platform.runLater(() -> {
+                    updateStatusMessage("Sync completed successfully");
+                    updateSyncStatus();
+                });
+            } catch (Exception e) {
+                log.error("Manual sync failed", e);
+                Platform.runLater(() -> {
+                    updateStatusMessage("Sync failed: " + e.getMessage());
+                    showError("Sync Error", "Failed to sync with main server:\n" + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Export data action - shows export options dialog
+     */
+    @FXML
+    public void exportData() {
+        log.info("Export data triggered");
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Export Data");
+        alert.setHeaderText("Export to CSV");
+        alert.setContentText("Choose what to export:\n\n" +
+            "• Grades\n" +
+            "• Attendance\n" +
+            "• Hall Passes\n\n" +
+            "Full export functionality will be available in next release.");
+        alert.showAndWait();
+
+        updateStatusMessage("Export feature in development");
+    }
+
+    /**
+     * Open settings - displays current application settings
+     */
+    @FXML
+    public void openSettings() {
+        log.info("Opening settings");
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Settings");
+        alert.setHeaderText("Application Settings");
+        alert.setContentText("Settings available:\n\n" +
+            "• Sync Interval: 15 seconds\n" +
+            "• Theme: Auto-switching\n" +
+            "• Network Check: Enabled\n\n" +
+            "Advanced settings dialog coming soon.");
+        alert.showAndWait();
+
+        updateStatusMessage("Settings dialog will be available soon");
+    }
+
+    /**
+     * Start network status monitoring
+     */
+    private void startNetworkMonitoring() {
+        networkCheckTimer = new Timer(true);
+        networkCheckTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                checkNetworkStatus();
+            }
+        }, 0, 30000); // Check every 30 seconds
+    }
+
+    /**
+     * Check network status using NetworkMonitorService
+     */
+    private void checkNetworkStatus() {
+        // Use NetworkMonitorService to check actual network connectivity
+        boolean isOnline = networkMonitor.isNetworkAvailable();
+
+        Platform.runLater(() -> {
+            if (isOnline) {
+                networkStatusIcon.setText("●");
+                networkStatusIcon.getStyleClass().clear();
+                networkStatusIcon.getStyleClass().add("success-text");
+                networkStatusLabel.setText("Online");
+            } else {
+                networkStatusIcon.setText("●");
+                networkStatusIcon.getStyleClass().clear();
+                networkStatusIcon.getStyleClass().add("danger-text");
+                networkStatusLabel.setText("Offline");
+            }
+        });
+    }
+
+    /**
+     * Update sync status display with actual data from AutoSyncService
+     */
+    private void updateSyncStatus() {
+        // Get actual sync status from AutoSyncService
+        long pendingCount = autoSyncService.getPendingItemsCount();
+        long lastSyncTime = autoSyncService.getLastSyncTime();
+
+        Platform.runLater(() -> {
+            pendingSyncLabel.setText("Pending: " + pendingCount);
+
+            // Update last sync time
+            if (lastSyncTime > 0) {
+                LocalDateTime syncTime = LocalDateTime.ofInstant(
+                    java.time.Instant.ofEpochMilli(lastSyncTime),
+                    java.time.ZoneId.systemDefault()
+                );
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+                lastSyncLabel.setText("Last sync: " + syncTime.format(formatter));
+            } else {
+                lastSyncLabel.setText("Last sync: Never");
+            }
+        });
+    }
+
+    /**
+     * Update status message
+     */
+    private void updateStatusMessage(String message) {
+        Platform.runLater(() -> {
+            statusMessageLabel.setText(message);
+        });
+    }
+
+    /**
+     * Show error dialog
+     */
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    /**
+     * Cleanup when controller is destroyed
+     */
+    public void cleanup() {
+        if (networkCheckTimer != null) {
+            networkCheckTimer.cancel();
+        }
+        log.info("Main Controller cleanup completed");
+    }
+}

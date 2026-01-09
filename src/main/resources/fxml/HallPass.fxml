@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.heronix.teacher.ui.controller.HallPassController"
+      spacing="20" styleClass="content-pane">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox spacing="5">
+            <Label text="Hall Pass Management" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+            <Label fx:id="dateLabel" text="Today" styleClass="text-secondary"/>
+        </VBox>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <!-- Date Picker -->
+        <VBox spacing="5" alignment="CENTER_RIGHT">
+            <Label text="Select Date" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            <DatePicker fx:id="datePicker" prefWidth="150"/>
+        </VBox>
+
+        <!-- Quick Actions -->
+        <Button text="Issue Pass" onAction="#issuePass"
+                styleClass="button-success" prefHeight="40" prefWidth="120"/>
+        <Button text="View History" onAction="#viewHistory"
+                styleClass="button-secondary" prefHeight="40" prefWidth="120"/>
+    </HBox>
+
+    <!-- Statistics Cards -->
+    <HBox spacing="15">
+        <!-- Active Passes Card -->
+        <VBox styleClass="card, stat-card" spacing="8" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="● ACTIVE" styleClass="success-text" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <Label fx:id="activeCountLabel" text="0" styleClass="stat-value" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+            <Label text="Currently Out" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Returned Card -->
+        <VBox styleClass="card, stat-card" spacing="8" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="✓ RETURNED" styleClass="text-secondary" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <Label fx:id="returnedCountLabel" text="0" styleClass="stat-value" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+            <Label text="Today" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Overdue Card -->
+        <VBox styleClass="card, stat-card" spacing="8" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="⚠ OVERDUE" styleClass="danger-text" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <Label fx:id="overdueCountLabel" text="0" styleClass="stat-value" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+            <Label text="Students" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+
+        <!-- Average Duration Card -->
+        <VBox styleClass="card, stat-card" spacing="8" HBox.hgrow="ALWAYS">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            <Label text="⏱ AVERAGE" styleClass="text-secondary" style="-fx-font-size: 12px; -fx-font-weight: bold;"/>
+            <Label fx:id="avgDurationLabel" text="0 min" styleClass="stat-value" style="-fx-font-size: 32px; -fx-font-weight: bold;"/>
+            <Label text="Duration" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+        </VBox>
+    </HBox>
+
+    <!-- Filters and Search -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Label text="Filter:" styleClass="text-bold"/>
+
+        <RadioButton fx:id="filterAllRadio" text="All" selected="true">
+            <toggleGroup>
+                <ToggleGroup fx:id="filterGroup"/>
+            </toggleGroup>
+        </RadioButton>
+        <RadioButton fx:id="filterActiveRadio" text="Active" toggleGroup="$filterGroup"/>
+        <RadioButton fx:id="filterReturnedRadio" text="Returned" toggleGroup="$filterGroup"/>
+        <RadioButton fx:id="filterOverdueRadio" text="Overdue" toggleGroup="$filterGroup"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <TextField fx:id="searchField" promptText="Search student name..."
+                   prefWidth="250"/>
+    </HBox>
+
+    <!-- Hall Pass Table -->
+    <VBox styleClass="card" VBox.vgrow="ALWAYS">
+        <padding>
+            <Insets top="15" right="15" bottom="15" left="15"/>
+        </padding>
+
+        <TableView fx:id="hallPassTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="studentNameColumn" text="Student Name" prefWidth="180"/>
+                <TableColumn fx:id="timeOutColumn" text="Time Out" prefWidth="100"/>
+                <TableColumn fx:id="timeInColumn" text="Time In" prefWidth="100"/>
+                <TableColumn fx:id="destinationColumn" text="Destination" prefWidth="120"/>
+                <TableColumn fx:id="durationColumn" text="Duration" prefWidth="100"/>
+                <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                <TableColumn fx:id="notesColumn" text="Notes" prefWidth="200"/>
+                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="10">
+                    <Label text="No hall passes for this date" styleClass="text-secondary"/>
+                    <Button text="Issue Pass" onAction="#issuePass" styleClass="button-primary"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+    </VBox>
+
+    <!-- Bottom Action Bar -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Button text="Issue Pass" onAction="#issuePass"
+                styleClass="button-success" prefHeight="35" prefWidth="120"/>
+        <Button text="Export to CSV" onAction="#exportPasses"
+                styleClass="button-secondary" prefHeight="35" prefWidth="120"/>
+        <Button text="Refresh" onAction="#refreshData"
+                styleClass="button-secondary" prefHeight="35" prefWidth="100"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Label fx:id="statusLabel" text="Ready" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+    </HBox>
+
+</VBox>

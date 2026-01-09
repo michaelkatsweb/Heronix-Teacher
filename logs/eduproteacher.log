@@ -1,0 +1,95 @@
+2025-12-25T21:02:50.590-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.s.boot.SpringApplication               : Starting application using Java 21.0.9 with PID 291952 (started by Gamer in H:\Heronix\Heronix-Teacher)
+2025-12-25T21:02:50.599-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.s.boot.SpringApplication               : No active profile set, falling back to 1 default profile: "default"
+2025-12-25T21:02:53.424-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-12-25T21:02:53.713-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 276 ms. Found 9 JPA repository interfaces.
+2025-12-25T21:02:54.685-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-12-25T21:02:54.781-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.3.1.Final
+2025-12-25T21:02:54.831-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-12-25T21:02:55.136-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-25T21:02:55.171-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-12-25T21:03:00.255-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn1: url=jdbc:h2:file:./data/eduproteacher user=SA
+2025-12-25T21:03:00.257-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-12-25T21:03:00.306-05:00  WARN 291952 --- [Heronix-Teacher] [JavaFX-Launcher] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-12-25T21:03:01.963-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-25T21:03:02.039-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-25T21:03:02.049-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  : Initializing database configuration...
+2025-12-25T21:03:02.049-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  : Using existing H2 database: H:\Heronix\Heronix-Teacher\.\data\eduproteacher.mv.db
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  : H2 Database Features:
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  :   - Local embedded (file-based)
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  :   - Auto-sync to main server every 15 seconds
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  :   - Power failure protection
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  :   - Network disruption resilient
+2025-12-25T21:03:02.050-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.heronix.teacher.config.DatabaseConfig  : Database configuration initialized successfully
+2025-12-25T21:03:02.627-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-12-25T21:03:05.179-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.AutoSyncService      : Initializing Auto-Sync Service
+2025-12-25T21:03:05.179-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.AutoSyncService      : Sync interval: 15 seconds
+2025-12-25T21:03:05.179-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.AutoSyncService      : Admin server: http://localhost:9580
+2025-12-25T21:03:05.179-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.AutoSyncService      : Batch size: 100
+2025-12-25T21:03:05.292-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.AutoSyncService      : Auto-Sync Service started successfully
+2025-12-25T21:03:06.056-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.TeacherSyncService   : Initializing Teacher Sync Service
+2025-12-25T21:03:06.056-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.TeacherSyncService   : Sync interval: 300 seconds (5 minutes)
+2025-12-25T21:03:06.056-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.TeacherSyncService   : Admin database: jdbc:h2:file:h:/EduScheduler/eduscheduler-pro/dataeduscheduler
+2025-12-25T21:03:06.398-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.TeacherSyncService   : Successfully connected to admin database
+2025-12-25T21:03:06.399-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.service.TeacherSyncService   : Teacher Sync Service started successfully
+2025-12-25T21:03:06.819-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] o.s.boot.SpringApplication               : Started application in 16.826 seconds (process running for 18.442)
+2025-12-25T21:03:06.821-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Checking if test data initialization is needed...
+2025-12-25T21:03:06.948-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Teacher T001 already exists, skipping
+2025-12-25T21:03:06.950-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Teacher T002 already exists, skipping
+2025-12-25T21:03:06.953-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Teacher T003 already exists, skipping
+2025-12-25T21:03:06.956-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Teacher T004 already exists, skipping
+2025-12-25T21:03:06.958-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Teacher T005 already exists, skipping
+2025-12-25T21:03:06.959-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.config.DataInitializer       : Test data initialization completed successfully
+2025-12-25T21:03:06.960-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX-Launcher] c.h.teacher.HeronixTeacherApplication    : Spring Boot context initialized successfully
+2025-12-25T21:03:06.980-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : Starting JavaFX application...
+2025-12-25T21:03:07.401-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.LoginController      : LoginController initialized
+2025-12-25T21:03:07.426-05:00  WARN 291952 --- [Heronix-Teacher] [JavaFX Application Thread] javafx.css                               : Resource "@../css/light-theme.css" not found.
+2025-12-25T21:03:08.406-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : JavaFX application started successfully - Login screen displayed
+2025-12-25T21:03:16.400-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-4-thread-1] c.h.teacher.service.TeacherSyncService   : Starting teacher sync from admin database...
+2025-12-25T21:03:16.663-05:00 ERROR 291952 --- [Heronix-Teacher] [pool-4-thread-1] c.h.teacher.service.TeacherSyncService   : Error querying admin database: StatementCallback; bad SQL grammar [SELECT id, employee_id, first_name, last_name, email, password, password_expires_at, must_change_password, password_changed_at, department, phone_number, active FROM teachers WHERE password IS NOT NULL AND password != '' AND active = true]
+2025-12-25T21:03:16.664-05:00 ERROR 291952 --- [Heronix-Teacher] [pool-4-thread-1] c.h.teacher.service.TeacherSyncService   : Teacher sync failed (attempt 1): StatementCallback; bad SQL grammar [SELECT id, employee_id, first_name, last_name, email, password, password_expires_at, must_change_password, password_changed_at, department, phone_number, active FROM teachers WHERE password IS NOT NULL AND password != '' AND active = true]
+2025-12-25T21:03:20.302-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:03:34.087-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.LoginController      : Login attempt...
+2025-12-25T21:03:34.090-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.service.AuthenticationService      : Attempting authentication for employee ID: T001
+2025-12-25T21:03:34.253-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.service.AuthenticationService      : Authentication successful for: John Smith (T001)
+2025-12-25T21:03:34.254-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.LoginController      : Login successful for: John Smith (T001)
+2025-12-25T21:03:34.254-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.SessionManager       : Teacher logged in: John Smith (T001) at 2025-12-25T21:03:34.254805300
+2025-12-25T21:03:34.254-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.LoginController      : Loading main application window...
+2025-12-25T21:03:34.289-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.MainController       : Initializing Main Controller
+2025-12-25T21:03:34.289-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.MainController       : Loaded teacher: John Smith - Mathematics
+2025-12-25T21:03:34.289-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.MainController       : Loading view: Dashboard
+2025-12-25T21:03:34.354-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Initializing Dashboard Controller
+2025-12-25T21:03:34.367-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.GradebookService     : Fetching all active students
+2025-12-25T21:03:34.428-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Quick stats loaded: 0 students, 0 classes, 0 pending grades, 0 active passes
+2025-12-25T21:03:34.428-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.GradebookService     : Fetching all active students
+2025-12-25T21:03:34.430-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Mock schedule loaded
+2025-12-25T21:03:34.445-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Recent activity loaded: 0 grades, 0 attendance, 0 passes
+2025-12-25T21:03:34.455-05:00 DEBUG 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Attendance overview loaded: 0 present, 0 absent, 0 tardy
+2025-12-25T21:03:34.455-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.DashboardController  : Dashboard Controller initialized successfully
+2025-12-25T21:03:34.455-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.MainController       : View loaded successfully: Dashboard
+2025-12-25T21:03:34.467-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.MainController       : Main Controller initialized successfully
+2025-12-25T21:03:34.922-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.t.ui.controller.LoginController      : Main application window loaded successfully
+2025-12-25T21:03:35.295-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:03:50.299-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:04:05.296-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:04:20.295-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:04:35.296-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:04:52.029-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:05:05.300-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:05:20.295-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:05:35.295-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:05:50.327-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:06:05.295-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:06:20.299-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:06:35.297-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:06:50.293-05:00 DEBUG 291952 --- [Heronix-Teacher] [pool-3-thread-1] c.h.teacher.service.AutoSyncService      : Network unavailable - skipping sync (data safely stored locally)
+2025-12-25T21:06:57.744-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : Application close requested
+2025-12-25T21:06:57.780-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : Stopping Heronix-Teacher Application...
+2025-12-25T21:06:57.785-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.TeacherSyncService   : Shutting down Teacher Sync Service
+2025-12-25T21:06:57.785-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.TeacherSyncService   : Teacher Sync Service stopped. Total synced: 0 teachers
+2025-12-25T21:06:57.785-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.AutoSyncService      : Shutting down Auto-Sync Service
+2025-12-25T21:06:57.790-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.service.AutoSyncService      : Auto-Sync Service stopped. Total synced: 0 items
+2025-12-25T21:06:57.791-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-12-25T21:06:57.794-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-12-25T21:06:58.248-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-12-25T21:06:58.249-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : Spring Boot context closed
+2025-12-25T21:06:58.249-05:00  INFO 291952 --- [Heronix-Teacher] [JavaFX Application Thread] c.h.teacher.HeronixTeacherApplication    : Heronix-Teacher Application stopped

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      spacing="15" styleClass="dialog-pane"
+      prefWidth="500" prefHeight="600">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label fx:id="titleLabel" text="Create New Assignment"
+               styleClass="dialog-title" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Form Fields -->
+    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+        <VBox spacing="15">
+            <!-- Assignment Name -->
+            <VBox spacing="5">
+                <Label text="Assignment Name *" styleClass="field-label"/>
+                <TextField fx:id="assignmentNameField" promptText="Enter assignment name..." prefHeight="35"/>
+            </VBox>
+
+            <!-- Assignment Type -->
+            <VBox spacing="5">
+                <Label text="Assignment Type *" styleClass="field-label"/>
+                <ComboBox fx:id="assignmentTypeCombo" prefWidth="Infinity" prefHeight="35"
+                          promptText="Select type..."/>
+                <Label text="Examples: Homework, Quiz, Test, Exam, Project, Lab, etc."
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Assignment Category -->
+            <VBox spacing="5">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Category (for weighted grading)" styleClass="field-label"/>
+                    <Button text="Manage Categories" onAction="#manageCategories"
+                            styleClass="button-secondary" prefHeight="25" style="-fx-font-size: 10px;"/>
+                </HBox>
+                <ComboBox fx:id="categoryCombo" prefWidth="Infinity" prefHeight="35"
+                          promptText="Select category (optional)..."/>
+                <Label text="Categories enable weighted grading, drop lowest scores, and extra credit"
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Grading Style -->
+            <VBox spacing="5">
+                <Label text="Grading Style *" styleClass="field-label"/>
+                <ComboBox fx:id="gradingStyleCombo" prefWidth="Infinity" prefHeight="35"
+                          promptText="Select grading style..."/>
+                <Label text="Choose how grades will be entered: Letter (A-F), Points, or Percentage"
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Max Points -->
+            <VBox spacing="5">
+                <Label fx:id="maxPointsLabel" text="Maximum Points *" styleClass="field-label"/>
+                <TextField fx:id="maxPointsField" promptText="e.g., 100" prefHeight="35"/>
+                <Label fx:id="maxPointsHelpText" text="Enter the maximum points possible for this assignment"
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Weight Percentage -->
+            <VBox spacing="5">
+                <Label text="Weight (% of Final Grade)" styleClass="field-label"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="weightField" promptText="Auto-calculated" prefHeight="35" prefWidth="150"/>
+                    <Label text="%" styleClass="text-secondary"/>
+                    <Button text="Auto" onAction="#autoCalculateWeight"
+                            styleClass="button-secondary" prefHeight="30"/>
+                </HBox>
+                <Label text="Leave blank for automatic weight based on assignment type"
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Due Date -->
+            <VBox spacing="5">
+                <Label text="Due Date" styleClass="field-label"/>
+                <DatePicker fx:id="dueDatePicker" prefHeight="35" promptText="Select due date..."/>
+            </VBox>
+
+            <!-- Course -->
+            <VBox spacing="5">
+                <Label text="Course" styleClass="field-label"/>
+                <ComboBox fx:id="courseCombo" prefWidth="Infinity" prefHeight="35"
+                          promptText="Select course..." editable="true"/>
+                <Label text="Select or enter course name"
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+            </VBox>
+
+            <!-- Description -->
+            <VBox spacing="5">
+                <Label text="Description" styleClass="field-label"/>
+                <TextArea fx:id="descriptionArea" promptText="Enter assignment description..."
+                          prefRowCount="4" wrapText="true"/>
+            </VBox>
+
+            <!-- Active Status -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <CheckBox fx:id="activeCheckbox" selected="true"/>
+                <Label text="Active (visible to students)" styleClass="field-label"/>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+
+    <Separator/>
+
+    <!-- Summary Panel -->
+    <VBox spacing="8" styleClass="info-panel" style="-fx-background-color: #f5f5f5; -fx-padding: 10; -fx-background-radius: 5;">
+        <Label text="Assignment Summary:" styleClass="text-bold" style="-fx-font-size: 11px;"/>
+        <Label fx:id="summaryLabel" text="Fill in the fields above" styleClass="text-secondary"
+               style="-fx-font-size: 11px;" wrapText="true"/>
+    </VBox>
+
+    <!-- Action Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#cancel" styleClass="button-secondary" prefHeight="35" prefWidth="100"/>
+        <Button fx:id="saveButton" text="Save Assignment" onAction="#save"
+                styleClass="button-primary" prefHeight="35" prefWidth="150"/>
+    </HBox>
+
+</VBox>
