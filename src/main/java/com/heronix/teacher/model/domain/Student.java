@@ -57,6 +57,12 @@ public class Student {
     private String email;
 
     /**
+     * Parent/guardian email for communication
+     */
+    @Column(name = "parent_email")
+    private String parentEmail;
+
+    /**
      * Date of birth
      */
     @Column(name = "date_of_birth")

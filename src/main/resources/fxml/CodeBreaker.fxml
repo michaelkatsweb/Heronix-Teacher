@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.CodeBreakerController"
+            styleClass="code-breaker-view">
+
+    <!-- Header -->
+    <top>
+        <VBox styleClass="header-section" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <Label text="Code Breaker - Multiplayer Game" styleClass="page-title"/>
+            <Label text="Create and manage competitive quiz game sessions" styleClass="page-subtitle"/>
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="20">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+            <!-- Left Panel: Session Control -->
+            <VBox spacing="20" prefWidth="300" styleClass="control-panel">
+                <!-- Create Session -->
+                <VBox spacing="10" styleClass="card">
+                    <Label text="Create New Session" styleClass="section-title"/>
+
+                    <Label text="Question Set:" styleClass="field-label"/>
+                    <ComboBox fx:id="questionSetCombo" maxWidth="Infinity" promptText="Select Question Set"/>
+
+                    <HBox spacing="10">
+                        <VBox HBox.hgrow="ALWAYS">
+                            <Label text="Time Limit (min):" styleClass="field-label"/>
+                            <Spinner fx:id="timeLimitSpinner" maxWidth="Infinity"/>
+                        </VBox>
+                        <VBox HBox.hgrow="ALWAYS">
+                            <Label text="Target Credits:" styleClass="field-label"/>
+                            <Spinner fx:id="targetCreditsSpinner" maxWidth="Infinity"/>
+                        </VBox>
+                    </HBox>
+
+                    <Button fx:id="createSessionBtn" text="Create Session"
+                            onAction="#handleCreateSession" styleClass="primary-button" maxWidth="Infinity"/>
+                </VBox>
+
+                <!-- Session Info (shown after creation) -->
+                <VBox fx:id="sessionInfoBox" spacing="10" styleClass="card" visible="false">
+                    <Label text="Active Session" styleClass="section-title"/>
+
+                    <HBox alignment="CENTER" spacing="10">
+                        <Label text="Code:" styleClass="field-label"/>
+                        <Label fx:id="sessionCodeLabel" styleClass="session-code-display"/>
+                    </HBox>
+
+                    <HBox alignment="CENTER" spacing="20">
+                        <VBox alignment="CENTER">
+                            <Label fx:id="playerCountLabel" text="0 players" styleClass="metric-value"/>
+                            <Label text="Joined" styleClass="metric-label"/>
+                        </VBox>
+                        <VBox alignment="CENTER">
+                            <Label fx:id="sessionStatusLabel" text="WAITING" styleClass="status-badge"/>
+                            <Label text="Status" styleClass="metric-label"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="10">
+                        <Button fx:id="startGameBtn" text="Start Game"
+                                onAction="#handleStartGame" styleClass="success-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Button fx:id="endGameBtn" text="End Game"
+                                onAction="#handleEndGame" styleClass="danger-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Question Set Management -->
+                <VBox spacing="10" styleClass="card">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Question Sets" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                        <Button text="Refresh" onAction="#handleRefreshSets" styleClass="small-button"/>
+                    </HBox>
+
+                    <TextField fx:id="newSetNameField" promptText="New set name..."/>
+                    <HBox spacing="5">
+                        <TextField fx:id="newSetSubjectField" promptText="Subject" HBox.hgrow="ALWAYS"/>
+                        <ComboBox fx:id="newSetGradeCombo" promptText="Grade"/>
+                    </HBox>
+                    <Button fx:id="createSetBtn" text="Create Set"
+                            onAction="#handleCreateQuestionSet" styleClass="secondary-button" maxWidth="Infinity"/>
+
+                    <Separator/>
+
+                    <!-- Edit Selected Set -->
+                    <Button fx:id="editQuestionsBtn" text="Edit Questions"
+                            onAction="#handleEditQuestions" styleClass="secondary-button" maxWidth="Infinity"/>
+
+                    <!-- Browse Presets -->
+                    <Button fx:id="browsePresetsBtn" text="Browse Preset Sets"
+                            onAction="#handleBrowsePresets" styleClass="secondary-button" maxWidth="Infinity"/>
+                </VBox>
+            </VBox>
+
+            <!-- Center Panel: Metrics Dashboard -->
+            <VBox spacing="20" HBox.hgrow="ALWAYS">
+                <!-- Summary Cards -->
+                <HBox spacing="15">
+                    <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+                        <Label fx:id="totalPlayersMetric" text="0" styleClass="metric-value-large"/>
+                        <Label text="Players" styleClass="metric-label"/>
+                    </VBox>
+                    <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+                        <Label fx:id="questionsAnsweredMetric" text="0" styleClass="metric-value-large"/>
+                        <Label text="Questions Answered" styleClass="metric-label"/>
+                    </VBox>
+                    <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+                        <Label fx:id="avgAccuracyMetric" text="0%" styleClass="metric-value-large"/>
+                        <Label text="Avg Accuracy" styleClass="metric-label"/>
+                    </VBox>
+                    <VBox styleClass="metric-card" HBox.hgrow="ALWAYS">
+                        <Label fx:id="totalHacksMetric" text="0" styleClass="metric-value-large"/>
+                        <Label text="Successful Hacks" styleClass="metric-label"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Leaderboard Table -->
+                <VBox spacing="10" VBox.vgrow="ALWAYS" styleClass="card">
+                    <Label text="Live Leaderboard" styleClass="section-title"/>
+                    <TableView fx:id="leaderboardTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="rankColumn" text="#" prefWidth="40"/>
+                            <TableColumn fx:id="studentColumn" text="Student" prefWidth="150"/>
+                            <TableColumn fx:id="creditsColumn" text="Credits" prefWidth="80"/>
+                            <TableColumn fx:id="correctColumn" text="Correct" prefWidth="70"/>
+                            <TableColumn fx:id="wrongColumn" text="Wrong" prefWidth="70"/>
+                            <TableColumn fx:id="accuracyColumn" text="Accuracy" prefWidth="80"/>
+                            <TableColumn fx:id="hacksColumn" text="Hacks" prefWidth="60"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No players yet. Share the session code with students!" styleClass="placeholder-text"/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+
+                <!-- Activity Feed -->
+                <VBox spacing="10" prefHeight="180" styleClass="card">
+                    <Label text="Live Activity" styleClass="section-title"/>
+                    <ListView fx:id="activityFeed" VBox.vgrow="ALWAYS" styleClass="activity-list">
+                        <placeholder>
+                            <Label text="Activity will appear here when the game starts" styleClass="placeholder-text"/>
+                        </placeholder>
+                    </ListView>
+                </VBox>
+            </VBox>
+
+            <!-- Right Panel: Student Details -->
+            <VBox fx:id="studentDetailPanel" spacing="15" prefWidth="250" styleClass="card" visible="false">
+                <Label text="Student Details" styleClass="section-title"/>
+                <Label fx:id="selectedStudentName" styleClass="student-name-display"/>
+
+                <Separator/>
+
+                <GridPane hgap="10" vgap="8">
+                    <Label text="Credits:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailCredits" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Correct:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailCorrect" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Wrong:" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailWrong" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Accuracy:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailAccuracy" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Hack Attempts:" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailHackAttempts" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Successful:" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailSuccessfulHacks" GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="detail-value"/>
+
+                    <Label text="Times Hacked:" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="detail-label"/>
+                    <Label fx:id="detailTimesHacked" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="detail-value"/>
+                </GridPane>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

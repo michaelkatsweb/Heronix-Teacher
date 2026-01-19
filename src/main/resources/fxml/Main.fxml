@@ -92,6 +92,18 @@
                     styleClass="nav-button"
                     maxWidth="Infinity" prefHeight="45"/>
 
+            <Button fx:id="deviceMgmtBtn" text="📱 Device Management" onAction="#showDeviceManagement"
+                    styleClass="nav-button"
+                    maxWidth="Infinity" prefHeight="45"/>
+
+            <Button fx:id="gameAnalyticsBtn" text="🎮 Game Analytics" onAction="#showGameAnalytics"
+                    styleClass="nav-button"
+                    maxWidth="Infinity" prefHeight="45"/>
+
+            <Button fx:id="codeBreakerBtn" text="🔐 Code Breaker" onAction="#showCodeBreaker"
+                    styleClass="nav-button"
+                    maxWidth="Infinity" prefHeight="45"/>
+
             <Separator/>
 
             <!-- Quick Actions -->

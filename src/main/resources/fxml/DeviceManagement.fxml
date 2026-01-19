@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.DeviceManagementController"
+            styleClass="content-pane">
+
+    <!-- Header -->
+    <top>
+        <VBox spacing="10" styleClass="section">
+            <padding>
+                <Insets top="20" right="20" bottom="10" left="20"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label text="📱 Device Management" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Device Statistics -->
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card" style="-fx-padding: 10; -fx-background-radius: 5;">
+                    <Label fx:id="totalDevicesLabel" text="0" styleClass="stat-value" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <Label text="Total Devices" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                </VBox>
+
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card" style="-fx-padding: 10; -fx-background-radius: 5;">
+                    <Label fx:id="pendingDevicesLabel" text="0" styleClass="warning-text" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <Label text="Pending" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                </VBox>
+
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card" style="-fx-padding: 10; -fx-background-radius: 5;">
+                    <Label fx:id="approvedDevicesLabel" text="0" styleClass="success-text" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <Label text="Approved" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+                </VBox>
+
+                <Button text="🔄 Refresh" onAction="#refreshDevices" styleClass="button-primary"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <TabPane fx:id="deviceTabPane" tabClosingPolicy="UNAVAILABLE" styleClass="content-tabs">
+            <padding>
+                <Insets top="10" right="20" bottom="20" left="20"/>
+            </padding>
+
+            <!-- Pending Devices Tab -->
+            <Tab text="⏳ Pending Approvals">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Devices awaiting approval" styleClass="text-secondary"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <TextField fx:id="pendingSearchField" promptText="🔍 Search devices..." prefWidth="200"/>
+                    </HBox>
+
+                    <TableView fx:id="pendingDevicesTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="pendingDeviceIdCol" text="Device ID" prefWidth="180"/>
+                            <TableColumn fx:id="pendingDeviceNameCol" text="Device Name" prefWidth="150"/>
+                            <TableColumn fx:id="pendingDeviceTypeCol" text="Type" prefWidth="100"/>
+                            <TableColumn fx:id="pendingOsCol" text="Operating System" prefWidth="150"/>
+                            <TableColumn fx:id="pendingRegisteredAtCol" text="Registered" prefWidth="140"/>
+                            <TableColumn fx:id="pendingActionsCol" text="Actions" prefWidth="200"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No pending devices" styleClass="text-secondary"/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- Active Devices Tab -->
+            <Tab text="✅ Active Devices">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Approved and active devices" styleClass="text-secondary"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <TextField fx:id="activeSearchField" promptText="🔍 Search devices..." prefWidth="200"/>
+                    </HBox>
+
+                    <TableView fx:id="activeDevicesTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="activeDeviceIdCol" text="Device ID" prefWidth="180"/>
+                            <TableColumn fx:id="activeDeviceNameCol" text="Device Name" prefWidth="150"/>
+                            <TableColumn fx:id="activeStudentIdCol" text="Student ID" prefWidth="120"/>
+                            <TableColumn fx:id="activeDeviceTypeCol" text="Type" prefWidth="100"/>
+                            <TableColumn fx:id="activeApprovedAtCol" text="Approved" prefWidth="140"/>
+                            <TableColumn fx:id="activeLastSyncCol" text="Last Sync" prefWidth="140"/>
+                            <TableColumn fx:id="activeActionsCol" text="Actions" prefWidth="120"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No active devices" styleClass="text-secondary"/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- All Devices Tab -->
+            <Tab text="📋 All Devices">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Complete device inventory" styleClass="text-secondary"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <ComboBox fx:id="statusFilterCombo" promptText="Filter by Status" prefWidth="150"/>
+                        <TextField fx:id="allSearchField" promptText="🔍 Search devices..." prefWidth="200"/>
+                    </HBox>
+
+                    <TableView fx:id="allDevicesTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="allDeviceIdCol" text="Device ID" prefWidth="180"/>
+                            <TableColumn fx:id="allDeviceNameCol" text="Device Name" prefWidth="150"/>
+                            <TableColumn fx:id="allStudentIdCol" text="Student ID" prefWidth="120"/>
+                            <TableColumn fx:id="allStatusCol" text="Status" prefWidth="100"/>
+                            <TableColumn fx:id="allDeviceTypeCol" text="Type" prefWidth="100"/>
+                            <TableColumn fx:id="allRegisteredAtCol" text="Registered" prefWidth="140"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No devices found" styleClass="text-secondary"/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+
+    <!-- Bottom Status Bar -->
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="15" styleClass="status-bar" style="-fx-padding: 10;">
+            <Label fx:id="statusLabel" text="Ready" styleClass="text-secondary"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="serverStatusLabel" text="Ed-Games Server: Checking..." styleClass="text-secondary"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.QuestionEditorController"
+            styleClass="question-editor-view"
+            prefWidth="900" prefHeight="700">
+
+    <!-- Header -->
+    <top>
+        <VBox styleClass="header-section" spacing="5">
+            <padding><Insets top="15" right="20" bottom="15" left="20"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Button fx:id="backBtn" text="Back" onAction="#handleBack" styleClass="secondary-button"/>
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label fx:id="setNameLabel" text="Question Set" styleClass="page-title"/>
+                    <Label fx:id="setInfoLabel" text="Subject - Grade" styleClass="page-subtitle"/>
+                </VBox>
+                <Button fx:id="saveBtn" text="Save Changes" onAction="#handleSave" styleClass="primary-button"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="20">
+            <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+
+            <!-- Left: Question List -->
+            <VBox spacing="10" prefWidth="280" styleClass="card">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Questions" styleClass="section-title" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="questionCountLabel" text="0" styleClass="badge"/>
+                </HBox>
+
+                <ListView fx:id="questionListView" VBox.vgrow="ALWAYS" styleClass="question-list">
+                    <placeholder>
+                        <Label text="No questions yet. Add your first question!" styleClass="placeholder-text" wrapText="true"/>
+                    </placeholder>
+                </ListView>
+
+                <HBox spacing="10">
+                    <Button fx:id="addQuestionBtn" text="+ Add Question"
+                            onAction="#handleAddQuestion" styleClass="success-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+
+                <HBox spacing="10">
+                    <Button fx:id="deleteQuestionBtn" text="Delete"
+                            onAction="#handleDeleteQuestion" styleClass="danger-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button fx:id="duplicateQuestionBtn" text="Duplicate"
+                            onAction="#handleDuplicateQuestion" styleClass="secondary-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right: Question Editor Form -->
+            <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
+                <Label text="Edit Question" styleClass="section-title"/>
+
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="editor-scroll">
+                    <VBox spacing="15">
+                        <padding><Insets top="5" right="10" bottom="5" left="5"/></padding>
+
+                        <!-- Question Text -->
+                        <VBox spacing="5">
+                            <Label text="Question Text *" styleClass="field-label"/>
+                            <TextArea fx:id="questionTextArea" promptText="Enter your question here..."
+                                      wrapText="true" prefRowCount="3" styleClass="question-textarea"/>
+                        </VBox>
+
+                        <!-- Correct Answer -->
+                        <VBox spacing="5">
+                            <Label text="Correct Answer *" styleClass="field-label"/>
+                            <TextField fx:id="correctAnswerField" promptText="The correct answer" styleClass="correct-answer-field"/>
+                        </VBox>
+
+                        <!-- Wrong Answers -->
+                        <VBox spacing="5">
+                            <Label text="Wrong Answers (Distractors)" styleClass="field-label"/>
+                            <TextField fx:id="wrongAnswer1Field" promptText="Wrong answer 1"/>
+                            <TextField fx:id="wrongAnswer2Field" promptText="Wrong answer 2"/>
+                            <TextField fx:id="wrongAnswer3Field" promptText="Wrong answer 3"/>
+                        </VBox>
+
+                        <!-- Difficulty -->
+                        <HBox spacing="20">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Difficulty" styleClass="field-label"/>
+                                <ComboBox fx:id="difficultyCombo" maxWidth="Infinity" promptText="Select difficulty"/>
+                            </VBox>
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label text="Order" styleClass="field-label"/>
+                                <Spinner fx:id="orderSpinner" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Explanation (Optional) -->
+                        <VBox spacing="5">
+                            <Label text="Explanation (shown after answering)" styleClass="field-label"/>
+                            <TextArea fx:id="explanationArea" promptText="Optional: Explain why this is the correct answer..."
+                                      wrapText="true" prefRowCount="2"/>
+                        </VBox>
+
+                        <!-- Image URL (Optional) -->
+                        <VBox spacing="5">
+                            <Label text="Image URL (optional)" styleClass="field-label"/>
+                            <TextField fx:id="imageUrlField" promptText="https://example.com/image.png"/>
+                        </VBox>
+
+                        <!-- Preview -->
+                        <VBox spacing="10" styleClass="preview-section">
+                            <Label text="Preview" styleClass="section-title"/>
+                            <VBox fx:id="previewBox" spacing="10" styleClass="question-preview">
+                                <Label fx:id="previewQuestionLabel" wrapText="true" styleClass="preview-question"/>
+                                <VBox fx:id="previewAnswersBox" spacing="5"/>
+                            </VBox>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- Bottom: Status Bar -->
+    <bottom>
+        <HBox spacing="15" alignment="CENTER_LEFT" styleClass="status-bar">
+            <padding><Insets top="10" right="20" bottom="10" left="20"/></padding>
+            <Label fx:id="statusLabel" text="Ready" styleClass="status-text"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lastSavedLabel" text="" styleClass="status-text"/>
+        </HBox>
+    </bottom>
+</BorderPane>

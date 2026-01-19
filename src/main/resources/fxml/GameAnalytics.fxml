@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.GameAnalyticsController"
+            styleClass="main-content">
+
+    <!-- Top: Title and Date Range -->
+    <top>
+        <VBox spacing="15" styleClass="header-section">
+            <padding><Insets top="20" right="20" bottom="15" left="20"/></padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="20">
+                <Label text="Game Analytics" styleClass="page-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ProgressIndicator fx:id="loadingIndicator" prefWidth="24" prefHeight="24" visible="false"/>
+            </HBox>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Date Range:" styleClass="field-label"/>
+                <DatePicker fx:id="startDatePicker" promptText="Start Date" prefWidth="130"/>
+                <Label text="to"/>
+                <DatePicker fx:id="endDatePicker" promptText="End Date" prefWidth="130"/>
+                <Button fx:id="loadReportButton" text="Load Report" styleClass="primary-button"
+                        onAction="#handleLoadReport"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="exportCsvButton" text="Export CSV" styleClass="secondary-button"
+                        onAction="#handleExportCsv"/>
+            </HBox>
+
+            <Label fx:id="statusLabel" text="Select a date range and click 'Load Report'"
+                   styleClass="status-label"/>
+        </VBox>
+    </top>
+
+    <!-- Center: Main Content -->
+    <center>
+        <SplitPane dividerPositions="0.65" orientation="HORIZONTAL">
+            <padding><Insets top="10" right="20" bottom="20" left="20"/></padding>
+
+            <!-- Left: Tables -->
+            <VBox spacing="20">
+                <!-- Class Summary Cards -->
+                <HBox spacing="15" styleClass="summary-cards">
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Total Students" styleClass="card-label"/>
+                        <Label fx:id="totalStudentsLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Active Students" styleClass="card-label"/>
+                        <Label fx:id="activeStudentsLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Total Play Time" styleClass="card-label"/>
+                        <Label fx:id="totalPlayTimeLabel" text="0 min" styleClass="card-value"/>
+                    </VBox>
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Total Sessions" styleClass="card-label"/>
+                        <Label fx:id="totalSessionsLabel" text="0" styleClass="card-value"/>
+                    </VBox>
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Avg Time/Student" styleClass="card-label"/>
+                        <Label fx:id="avgPlayTimeLabel" text="0 min" styleClass="card-value"/>
+                    </VBox>
+                    <VBox styleClass="summary-card" HBox.hgrow="ALWAYS">
+                        <Label text="Avg Score" styleClass="card-label"/>
+                        <Label fx:id="avgScoreLabel" text="0%" styleClass="card-value"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Student Play Time Table -->
+                <VBox VBox.vgrow="ALWAYS" spacing="10">
+                    <Label text="Student Play Time" styleClass="section-title"/>
+                    <TableView fx:id="studentTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+                        <columns>
+                            <TableColumn fx:id="studentNameColumn" text="Student" prefWidth="150"/>
+                            <TableColumn fx:id="gradeColumn" text="Grade" prefWidth="60"/>
+                            <TableColumn fx:id="playTimeColumn" text="Play Time" prefWidth="90"/>
+                            <TableColumn fx:id="sessionsColumn" text="Sessions" prefWidth="70"/>
+                            <TableColumn fx:id="avgSessionColumn" text="Avg Session" prefWidth="90"/>
+                            <TableColumn fx:id="avgScoreColumn" text="Avg Score" prefWidth="80"/>
+                            <TableColumn fx:id="gamesPlayedColumn" text="Games" prefWidth="60"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No student data. Load a report to see statistics."/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+
+                <!-- Game Usage Table -->
+                <VBox VBox.vgrow="SOMETIMES" spacing="10" minHeight="200">
+                    <Label text="Game Usage Statistics" styleClass="section-title"/>
+                    <TableView fx:id="gameTable" VBox.vgrow="ALWAYS" styleClass="data-table">
+                        <columns>
+                            <TableColumn fx:id="gameNameColumn" text="Game" prefWidth="180"/>
+                            <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="100"/>
+                            <TableColumn fx:id="gamePlayTimeColumn" text="Total Time" prefWidth="100"/>
+                            <TableColumn fx:id="uniquePlayersColumn" text="Players" prefWidth="70"/>
+                            <TableColumn fx:id="gameSessionsColumn" text="Sessions" prefWidth="80"/>
+                            <TableColumn fx:id="gameAvgScoreColumn" text="Avg Score" prefWidth="90"/>
+                        </columns>
+                        <placeholder>
+                            <Label text="No game usage data available."/>
+                        </placeholder>
+                    </TableView>
+                </VBox>
+            </VBox>
+
+            <!-- Right: Student Detail Panel -->
+            <VBox fx:id="studentDetailPanel" spacing="15" styleClass="detail-panel" visible="false">
+                <padding><Insets top="10" right="15" bottom="15" left="15"/></padding>
+
+                <Label fx:id="selectedStudentLabel" text="Select a student" styleClass="section-title"/>
+
+                <Label text="Parent Summary Report" styleClass="subsection-title"/>
+                <TextArea fx:id="parentSummaryText" VBox.vgrow="ALWAYS"
+                          wrapText="true" editable="false"
+                          promptText="Select a student from the table to view their summary report..."
+                          styleClass="summary-text"/>
+
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="copyToClipboardButton" text="Copy to Clipboard"
+                            styleClass="secondary-button" onAction="#handleCopyToClipboard"/>
+                    <Button fx:id="emailParentButton" text="Email to Parent"
+                            styleClass="primary-button" onAction="#handleEmailParent"/>
+                </HBox>
+
+                <Separator/>
+
+                <Label text="Sharing Options" styleClass="subsection-title"/>
+                <Label text="Click 'Copy to Clipboard' to copy the summary text, or 'Email to Parent' to open your email client with the report pre-filled."
+                       wrapText="true" styleClass="help-text"/>
+            </VBox>
+        </SplitPane>
+    </center>
+</BorderPane>

@@ -66,6 +66,9 @@ public class MainController {
     @FXML private Button clubsBtn;
     @FXML private Button walletBtn;
     @FXML private Button commHubBtn;
+    @FXML private Button deviceMgmtBtn;
+    @FXML private Button gameAnalyticsBtn;
+    @FXML private Button codeBreakerBtn;
 
     // Status bar
     @FXML private Label statusMessageLabel;
@@ -191,6 +194,30 @@ public class MainController {
     }
 
     /**
+     * Show Device Management view
+     */
+    @FXML
+    public void showDeviceManagement() {
+        loadView("DeviceManagement", deviceMgmtBtn);
+    }
+
+    /**
+     * Show Game Analytics view
+     */
+    @FXML
+    public void showGameAnalytics() {
+        loadView("GameAnalytics", gameAnalyticsBtn);
+    }
+
+    /**
+     * Show Code Breaker multiplayer game view
+     */
+    @FXML
+    public void showCodeBreaker() {
+        loadView("CodeBreaker", codeBreakerBtn);
+    }
+
+    /**
      * Load a view into content area
      */
     private void loadView(String viewName, Button activeButton) {
@@ -232,6 +259,16 @@ public class MainController {
         gradebookBtn.getStyleClass().remove("nav-button-active");
         attendanceBtn.getStyleClass().remove("nav-button-active");
         hallpassBtn.getStyleClass().remove("nav-button-active");
+        clubsBtn.getStyleClass().remove("nav-button-active");
+        walletBtn.getStyleClass().remove("nav-button-active");
+        commHubBtn.getStyleClass().remove("nav-button-active");
+        deviceMgmtBtn.getStyleClass().remove("nav-button-active");
+        if (gameAnalyticsBtn != null) {
+            gameAnalyticsBtn.getStyleClass().remove("nav-button-active");
+        }
+        if (codeBreakerBtn != null) {
+            codeBreakerBtn.getStyleClass().remove("nav-button-active");
+        }
 
         // Add active class to current button
         if (activeButton != null && !activeButton.getStyleClass().contains("nav-button-active")) {
