@@ -107,8 +107,8 @@ public class LoginController {
                     log.info("Login successful for: {} ({})",
                             teacher.getFullName(), teacher.getEmployeeId());
 
-                    // Set session
-                    sessionManager.login(teacher);
+                    // Set session with password for Talk authentication
+                    sessionManager.login(teacher, password);
 
                     // Navigate to main application
                     navigateToMainApplication();

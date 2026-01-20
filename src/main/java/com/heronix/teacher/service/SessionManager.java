@@ -24,6 +24,9 @@ public class SessionManager {
     private LocalDateTime loginTime;
     private LocalDateTime lastActivityTime;
 
+    // Stored password for Talk authentication (cleared on logout)
+    private String storedPassword;
+
     // Session timeout: 8 hours (full school day)
     private static final int SESSION_TIMEOUT_HOURS = 8;
 
@@ -41,6 +44,25 @@ public class SessionManager {
     }
 
     /**
+     * Set the currently logged-in teacher with password for Talk authentication
+     *
+     * @param teacher The teacher who logged in
+     * @param password The password (stored temporarily for Talk auth)
+     */
+    public void login(Teacher teacher, String password) {
+        login(teacher);
+        this.storedPassword = password;
+    }
+
+    /**
+     * Get stored password for Talk authentication
+     * @return The password or null if not stored
+     */
+    public String getStoredPassword() {
+        return storedPassword;
+    }
+
+    /**
      * Log out the current teacher
      */
     public void logout() {
@@ -53,6 +75,7 @@ public class SessionManager {
         this.currentTeacher = null;
         this.loginTime = null;
         this.lastActivityTime = null;
+        this.storedPassword = null; // Clear stored password
     }
 
     /**

@@ -114,7 +114,15 @@ public class CommunicationHubController {
         if (sessionManager.getCurrentTeacher() == null) {
             log.warn("No teacher logged in, cannot initialize Talk connection");
             updateConnectionStatus(false);
-            loadSampleData(); // Fall back to sample data
+            loadSampleData(); // Fall back to offline mode
+            return;
+        }
+
+        String storedPassword = sessionManager.getStoredPassword();
+        if (storedPassword == null) {
+            log.warn("No stored password for Talk authentication");
+            updateConnectionStatus(false);
+            loadSampleData();
             return;
         }
 
@@ -125,10 +133,8 @@ public class CommunicationHubController {
         }
 
         String employeeId = sessionManager.getCurrentTeacher().getEmployeeId();
-        // Note: In production, password should be securely retrieved or use token-based auth
-        // For now, we'll attempt connection and fall back to sample data if it fails
 
-        communicationService.initialize(employeeId, "password")
+        communicationService.initialize(employeeId, storedPassword)
                 .thenAccept(success -> Platform.runLater(() -> {
                     if (success) {
                         log.info("Connected to Heronix-Talk server");

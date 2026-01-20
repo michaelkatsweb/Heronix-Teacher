@@ -205,21 +205,45 @@ public class CommunicationService {
     // ========================================================================
 
     /**
-     * Load/refresh channels list
+     * Load/refresh channels list (includes user's channels and public channels)
      */
     public CompletableFuture<List<TalkChannelDTO>> loadChannels() {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                // Get user's channels (channels they're a member of)
                 List<TalkChannelDTO> myChannels = apiClient.getMyChannels();
-                this.channels = myChannels;
+
+                // Also get public channels (visible to everyone)
+                List<TalkChannelDTO> publicChannels = apiClient.getPublicChannels();
+
+                // Merge lists, avoiding duplicates
+                java.util.Set<Long> seenIds = new java.util.HashSet<>();
+                List<TalkChannelDTO> allChannels = new ArrayList<>();
+
+                for (TalkChannelDTO channel : myChannels) {
+                    if (channel.getId() != null && seenIds.add(channel.getId())) {
+                        allChannels.add(channel);
+                    }
+                }
+
+                for (TalkChannelDTO channel : publicChannels) {
+                    if (channel.getId() != null && seenIds.add(channel.getId())) {
+                        allChannels.add(channel);
+                    }
+                }
+
+                this.channels = allChannels;
 
                 runOnFxThread(() -> {
                     if (onChannelsUpdated != null) {
-                        onChannelsUpdated.accept(myChannels);
+                        onChannelsUpdated.accept(allChannels);
                     }
                 });
 
-                return myChannels;
+                log.info("Loaded {} channels ({} personal, {} public)",
+                        allChannels.size(), myChannels.size(), publicChannels.size());
+
+                return allChannels;
 
             } catch (Exception e) {
                 log.error("Error loading channels", e);
