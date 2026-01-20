@@ -569,3 +569,84 @@
     -fx-font-size: 11px;
     -fx-text-fill: #9E9E9E;
 }
+
+/* ====================
+   COMMUNICATION HUB STYLES
+   ==================== */
+
+.news-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 10 15;
+}
+
+.news-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.news-ticker-container {
+    -fx-padding: 5;
+    -fx-background-color: transparent;
+}
+
+.news-item {
+    -fx-padding: 8;
+    -fx-background-color: #f5f5f5;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+
+.news-item:hover {
+    -fx-background-color: #eeeeee;
+}
+
+.chat-scroll-pane {
+    -fx-background-color: #fafafa;
+    -fx-padding: 0;
+    -fx-background-radius: 0;
+}
+
+.chat-scroll-pane > .viewport {
+    -fx-background-color: #fafafa;
+}
+
+.chat-messages-container {
+    -fx-padding: 15;
+    -fx-background-color: #fafafa;
+}
+
+.chat-message {
+    -fx-padding: 10;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+
+.system-message {
+    -fx-text-fill: #757575;
+    -fx-font-style: italic;
+    -fx-font-size: 11px;
+    -fx-padding: 5;
+}
+
+.channel-list, .user-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.channel-list .list-cell, .user-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 8;
+}
+
+.channel-list .list-cell:hover, .user-list .list-cell:hover {
+    -fx-background-color: #f0f0f0;
+    -fx-background-radius: 6;
+}
+
+.channel-list .list-cell:selected, .user-list .list-cell:selected {
+    -fx-background-color: #e3f2fd;
+    -fx-text-fill: #1976D2;
+    -fx-background-radius: 6;
+}

@@ -405,19 +405,44 @@ public class AdminApiClient {
 
     /**
      * Check if admin server is reachable
+     * Tries multiple endpoints: /actuator/health, /api/health, then just attempts connection
      */
     public boolean isServerReachable() {
+        // Try Spring Boot Actuator health endpoint first
+        String[] healthEndpoints = {"/actuator/health", "/api/health", "/api/system/health"};
+
+        for (String endpoint : healthEndpoints) {
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(baseUrl + endpoint))
+                        .GET()
+                        .timeout(Duration.ofSeconds(3))
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request,
+                        HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 200) {
+                    return true;
+                }
+            } catch (Exception e) {
+                log.debug("Health endpoint {} not available: {}", endpoint, e.getMessage());
+            }
+        }
+
+        // Fallback: try to connect to base URL
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/health"))
+                    .uri(URI.create(baseUrl))
                     .GET()
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(3))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request,
                     HttpResponse.BodyHandlers.ofString());
 
-            return response.statusCode() == 200;
+            // Any response (even 404) means server is up
+            return response.statusCode() < 500;
 
         } catch (Exception e) {
             log.debug("Server not reachable: {}", e.getMessage());

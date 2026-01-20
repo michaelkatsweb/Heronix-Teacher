@@ -1,9 +1,7 @@
 package com.heronix.teacher.ui.controller;
 
 import com.heronix.teacher.model.domain.Teacher;
-import com.heronix.teacher.service.AutoSyncService;
-import com.heronix.teacher.service.NetworkMonitorService;
-import com.heronix.teacher.service.SessionManager;
+import com.heronix.teacher.service.*;
 import com.heronix.teacher.util.ThemeManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -47,6 +45,9 @@ public class MainController {
     private final SessionManager sessionManager;
     private final AutoSyncService autoSyncService;
     private final NetworkMonitorService networkMonitor;
+    private final AdminApiClient adminApiClient;
+    private final EdGamesApiClient edGamesApiClient;
+    private final HeronixTalkApiClient talkApiClient;
 
     @FXML private BorderPane mainRoot;
     @FXML private StackPane contentArea;
@@ -57,6 +58,11 @@ public class MainController {
     @FXML private Label networkStatusIcon;
     @FXML private Label networkStatusLabel;
     @FXML private Button themeToggleBtn;
+
+    // Server status indicators
+    @FXML private Label sisStatusIcon;
+    @FXML private Label edgamesStatusIcon;
+    @FXML private Label talkStatusIcon;
 
     // Navigation buttons
     @FXML private Button dashboardBtn;
@@ -351,6 +357,7 @@ public class MainController {
             @Override
             public void run() {
                 checkNetworkStatus();
+                checkServerStatuses();
             }
         }, 0, 30000); // Check every 30 seconds
     }
@@ -375,6 +382,58 @@ public class MainController {
                 networkStatusLabel.setText("Offline");
             }
         });
+    }
+
+    /**
+     * Check individual server statuses (SIS, EdGames, Talk)
+     */
+    private void checkServerStatuses() {
+        // Check SIS (Admin API) server
+        boolean sisAvailable = false;
+        try {
+            sisAvailable = adminApiClient.isServerReachable();
+        } catch (Exception e) {
+            log.debug("SIS server check failed: {}", e.getMessage());
+        }
+        final boolean sisStatus = sisAvailable;
+
+        // Check EdGames server
+        boolean edgamesAvailable = false;
+        try {
+            edgamesAvailable = edGamesApiClient.isServerReachable();
+        } catch (Exception e) {
+            log.debug("EdGames server check failed: {}", e.getMessage());
+        }
+        final boolean edgamesStatus = edgamesAvailable;
+
+        // Check Heronix-Talk server
+        boolean talkAvailable = false;
+        try {
+            talkAvailable = talkApiClient.isServerReachable();
+        } catch (Exception e) {
+            log.debug("Talk server check failed: {}", e.getMessage());
+        }
+        final boolean talkStatus = talkAvailable;
+
+        // Update UI on JavaFX thread
+        Platform.runLater(() -> {
+            updateServerStatusIcon(sisStatusIcon, sisStatus);
+            updateServerStatusIcon(edgamesStatusIcon, edgamesStatus);
+            updateServerStatusIcon(talkStatusIcon, talkStatus);
+        });
+    }
+
+    /**
+     * Update a server status icon based on availability
+     */
+    private void updateServerStatusIcon(Label icon, boolean available) {
+        if (icon == null) return;
+
+        if (available) {
+            icon.setStyle("-fx-font-size: 10px; -fx-text-fill: #4CAF50;"); // Green
+        } else {
+            icon.setStyle("-fx-font-size: 10px; -fx-text-fill: #9E9E9E;"); // Gray
+        }
     }
 
     /**

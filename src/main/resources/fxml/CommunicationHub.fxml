@@ -7,7 +7,7 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.heronix.teacher.ui.controller.CommunicationHubController"
-            style="-fx-background-color: -fx-background;">
+            styleClass="content-area">
 
     <!-- Top: News Ticker Section -->
     <top>
@@ -25,21 +25,13 @@
 
             <!-- Scrolling News Ticker -->
             <ScrollPane fx:id="newsScrollPane"
-                       style="-fx-background: -fx-background; -fx-background-color: -fx-background; -fx-padding: 10 15;"
+                       styleClass="news-scroll-pane"
                        fitToHeight="true"
                        vbarPolicy="NEVER"
                        hbarPolicy="NEVER"
                        pannable="false">
-                <VBox fx:id="newsTickerContainer" spacing="8" style="-fx-padding: 5; -fx-background-color: -fx-background;">
+                <VBox fx:id="newsTickerContainer" spacing="8" styleClass="news-ticker-container">
                     <!-- News items will be added programmatically -->
-                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="news-item"
-                          style="-fx-padding: 8; -fx-background-color: -fx-card-background; -fx-background-radius: 5; -fx-cursor: hand;">
-                        <Label text="🔵" style="-fx-font-size: 10px;"/>
-                        <Label text="Welcome to Communication Hub - Click any news item to view full story"
-                               styleClass="text-bold" style="-fx-font-size: 12px;"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Just now" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
-                    </HBox>
                 </VBox>
             </ScrollPane>
 
@@ -126,11 +118,10 @@
             <ScrollPane fx:id="chatScrollPane"
                        VBox.vgrow="ALWAYS"
                        fitToWidth="true"
-                       styleClass="card"
-                       style="-fx-background: -fx-card-background; -fx-background-color: -fx-card-background; -fx-padding: 0; -fx-background-radius: 0;"
+                       styleClass="chat-scroll-pane"
                        vbarPolicy="AS_NEEDED"
                        hbarPolicy="NEVER">
-                <VBox fx:id="chatMessagesContainer" spacing="10" style="-fx-padding: 15; -fx-background-color: -fx-card-background;">
+                <VBox fx:id="chatMessagesContainer" spacing="10" styleClass="chat-messages-container">
                     <!-- Chat messages will be added programmatically -->
 
                     <!-- Welcome Message -->

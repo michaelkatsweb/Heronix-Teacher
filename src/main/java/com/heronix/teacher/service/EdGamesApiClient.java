@@ -278,20 +278,42 @@ public class EdGamesApiClient {
 
     /**
      * Check if Ed-Games server is reachable
+     * Tries multiple endpoints for compatibility
      */
     public boolean isServerReachable() {
+        String[] healthEndpoints = {"/ping", "/actuator/health", "/health", "/system/health"};
+
+        for (String endpoint : healthEndpoints) {
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(BASE_URL + endpoint))
+                        .timeout(Duration.ofSeconds(3))
+                        .GET()
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    return true;
+                }
+            } catch (Exception e) {
+                log.debug("Ed-Games endpoint {} not available: {}", endpoint, e.getMessage());
+            }
+        }
+
+        // Fallback: try to connect to base URL
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/ping"))
+                    .uri(URI.create(BASE_URL.replace("/api", "")))
                     .timeout(Duration.ofSeconds(3))
                     .GET()
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200;
+            // Any response (even 404) means server is up
+            return response.statusCode() < 500;
 
         } catch (Exception e) {
-            log.debug("Ed-Games server not reachable", e);
+            log.debug("Ed-Games server not reachable: {}", e.getMessage());
             return false;
         }
     }
