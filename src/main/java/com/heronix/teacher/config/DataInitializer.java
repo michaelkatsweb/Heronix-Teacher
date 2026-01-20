@@ -37,6 +37,10 @@ public class DataInitializer {
             log.info("Checking if test data initialization is needed...");
 
             try {
+                // Create admin test account (matches Heronix-Talk admin)
+                createTestTeacher("admin", "System", "Administrator", "admin@heronix.local",
+                                "admin123", "Administration");
+
                 // Create test teachers
                 createTestTeacher("T001", "John", "Smith", "john.smith@school.edu",
                                 "password123", "Mathematics");
