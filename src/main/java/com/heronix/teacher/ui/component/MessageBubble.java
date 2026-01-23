@@ -78,9 +78,11 @@ public class MessageBubble extends VBox {
         // Reply preview (if this is a reply)
         replyPreview = new Label();
         if (message.getReplyToId() != null && message.getReplyToPreview() != null) {
-            replyPreview.setText("\u21A9 " + message.getReplyToSenderName() + ": " + message.getReplyToPreview());
+            String preview = truncateText(message.getReplyToPreview(), 80);
+            replyPreview.setText("\u21A9 " + message.getReplyToSenderName() + ": " + preview);
             replyPreview.getStyleClass().addAll("reply-preview-content");
             replyPreview.setWrapText(true);
+            replyPreview.setMaxWidth(400);
 
             HBox replyContainer = new HBox(replyPreview);
             replyContainer.getStyleClass().add("thread-indicator");
@@ -570,5 +572,14 @@ public class MessageBubble extends VBox {
             case "FAILED" -> "failed";
             default -> null;
         };
+    }
+
+    /**
+     * Truncate text to a maximum length with ellipsis
+     */
+    private String truncateText(String text, int maxLength) {
+        if (text == null) return "";
+        if (text.length() <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + "...";
     }
 }
