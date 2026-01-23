@@ -1,5 +1,6 @@
 package com.heronix.teacher.model.dto.talk;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +28,8 @@ public class ChatWsMessage {
     private String correlationId;
     private boolean success;
     private String errorMessage;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime timestamp;
 
     // Message type constants
@@ -36,6 +39,8 @@ public class ChatWsMessage {
     public static final String TYPE_PRESENCE = "PRESENCE";
     public static final String TYPE_TYPING = "TYPING";
     public static final String TYPE_NOTIFICATION = "NOTIFICATION";
+    public static final String TYPE_NEWS = "NEWS";
+    public static final String TYPE_ALERT = "ALERT";
     public static final String TYPE_ERROR = "ERROR";
     public static final String TYPE_ACK = "ACK";
     public static final String TYPE_SYSTEM = "SYSTEM";

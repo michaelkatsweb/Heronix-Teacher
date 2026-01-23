@@ -2,7 +2,10 @@ package com.heronix.teacher.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heronix.teacher.model.dto.talk.ChatWsMessage;
+import com.heronix.teacher.model.dto.talk.TalkChannelInvitationDTO;
+import com.heronix.teacher.model.dto.talk.TalkAlertDTO;
 import com.heronix.teacher.model.dto.talk.TalkMessageDTO;
+import com.heronix.teacher.model.dto.talk.TalkNewsItemDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -36,10 +39,14 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
 
     // Message handlers
     private Consumer<TalkMessageDTO> onMessageReceived;
+    private Consumer<java.util.List<TalkMessageDTO>> onHistoryReceived;
     private Consumer<ChatWsMessage> onTypingIndicator;
     private Consumer<ChatWsMessage> onPresenceUpdate;
     private Consumer<Boolean> onConnectionStateChange;
     private Consumer<String> onError;
+    private Consumer<TalkNewsItemDTO> onNewsReceived;
+    private Consumer<TalkAlertDTO> onAlertReceived;
+    private Consumer<TalkChannelInvitationDTO> onInvitationReceived;
 
     // Message buffer for building multi-part messages
     private final StringBuilder messageBuffer = new StringBuilder();
@@ -207,6 +214,9 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
                 case ChatWsMessage.TYPE_TYPING -> handleTypingEvent(wsMessage);
                 case ChatWsMessage.TYPE_PRESENCE -> handlePresenceEvent(wsMessage);
                 case ChatWsMessage.TYPE_CHANNEL -> handleChannelEvent(wsMessage);
+                case ChatWsMessage.TYPE_NEWS -> handleNewsEvent(wsMessage);
+                case ChatWsMessage.TYPE_ALERT -> handleAlertEvent(wsMessage);
+                case ChatWsMessage.TYPE_NOTIFICATION -> handleNotificationEvent(wsMessage);
                 case ChatWsMessage.TYPE_ERROR -> handleErrorEvent(wsMessage);
                 default -> log.debug("Unhandled message type: {}", wsMessage.getType());
             }
@@ -217,15 +227,48 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
     }
 
     private void handleMessageEvent(ChatWsMessage wsMessage) {
-        if (onMessageReceived != null && wsMessage.getPayload() != null) {
+        log.info("Received MESSAGE event: action={}, channelId={}", wsMessage.getAction(), wsMessage.getChannelId());
+        if (wsMessage.getPayload() == null) {
+            log.warn("Message event received but no payload");
+            return;
+        }
+
+        String action = wsMessage.getAction();
+
+        // Handle HISTORY action - payload is a List of messages
+        if (ChatWsMessage.ACTION_HISTORY.equals(action)) {
+            if (onHistoryReceived != null) {
+                try {
+                    String payloadJson = objectMapper.writeValueAsString(wsMessage.getPayload());
+                    java.util.List<TalkMessageDTO> messages = objectMapper.readValue(payloadJson,
+                            objectMapper.getTypeFactory().constructCollectionType(java.util.List.class, TalkMessageDTO.class));
+                    log.info("Parsed {} history messages for channel {}", messages.size(), wsMessage.getChannelId());
+                    onHistoryReceived.accept(messages);
+                } catch (Exception e) {
+                    log.error("Error parsing history payload: {}", e.getMessage(), e);
+                }
+            } else {
+                log.debug("History received but no handler registered");
+            }
+            return;
+        }
+
+        // Handle CREATE/UPDATE/DELETE actions - payload is a single message
+        if (onMessageReceived != null) {
             try {
                 // Convert payload to TalkMessageDTO
                 String payloadJson = objectMapper.writeValueAsString(wsMessage.getPayload());
+                log.debug("Message payload JSON: {}", payloadJson);
                 TalkMessageDTO message = objectMapper.readValue(payloadJson, TalkMessageDTO.class);
+                log.info("Parsed message: id={}, channelId={}, senderId={}, content={}",
+                        message.getId(), message.getChannelId(), message.getSenderId(),
+                        message.getContent() != null ? message.getContent().substring(0, Math.min(50, message.getContent().length())) : "null");
                 onMessageReceived.accept(message);
             } catch (Exception e) {
-                log.error("Error parsing message payload: {}", e.getMessage());
+                log.error("Error parsing message payload: {}", e.getMessage(), e);
             }
+        } else {
+            log.warn("Message event received but no handler registered");
         }
     }
 
@@ -246,8 +289,58 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
         log.debug("Channel event: {}", wsMessage.getAction());
     }
 
+    private void handleNewsEvent(ChatWsMessage wsMessage) {
+        if (onNewsReceived != null && wsMessage.getPayload() != null) {
+            try {
+                // Convert payload to TalkNewsItemDTO
+                String payloadJson = objectMapper.writeValueAsString(wsMessage.getPayload());
+                TalkNewsItemDTO newsItem = objectMapper.readValue(payloadJson, TalkNewsItemDTO.class);
+                log.info("News received: {}", newsItem.getHeadline());
+                onNewsReceived.accept(newsItem);
+            } catch (Exception e) {
+                log.error("Error parsing news payload: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void handleAlertEvent(ChatWsMessage wsMessage) {
+        if (onAlertReceived != null && wsMessage.getPayload() != null) {
+            try {
+                // Convert payload to TalkAlertDTO
+                String payloadJson = objectMapper.writeValueAsString(wsMessage.getPayload());
+                TalkAlertDTO alert = objectMapper.readValue(payloadJson, TalkAlertDTO.class);
+                log.warn("ALERT received: [{}] {} - {}", alert.getAlertLevel(), alert.getAlertType(), alert.getTitle());
+                onAlertReceived.accept(alert);
+            } catch (Exception e) {
+                log.error("Error parsing alert payload: {}", e.getMessage());
+            }
+        } else {
+            log.warn("Alert received but no handler registered or no payload");
+        }
+    }
+
+    private void handleNotificationEvent(ChatWsMessage wsMessage) {
+        String action = wsMessage.getAction();
+        if (action == null) return;
+
+        // Handle invitation-related notifications
+        if (action.startsWith("INVITE_") && onInvitationReceived != null && wsMessage.getPayload() != null) {
+            try {
+                String payloadJson = objectMapper.writeValueAsString(wsMessage.getPayload());
+                TalkChannelInvitationDTO invitation = objectMapper.readValue(payloadJson, TalkChannelInvitationDTO.class);
+                log.info("Invitation notification received: action={}, channel={}", action, invitation.getChannelName());
+                onInvitationReceived.accept(invitation);
+            } catch (Exception e) {
+                log.error("Error parsing invitation payload: {}", e.getMessage());
+            }
+        } else {
+            log.debug("Notification received: action={}", action);
+        }
+    }
+
     private void handleErrorEvent(ChatWsMessage wsMessage) {
-        log.error("Server error: {}", wsMessage.getErrorMessage());
+        log.error("Server error received: type={}, action={}, errorMessage={}",
+                wsMessage.getType(), wsMessage.getAction(), wsMessage.getErrorMessage());
         notifyError(wsMessage.getErrorMessage());
     }
 
@@ -260,6 +353,16 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
      */
     public CompletableFuture<Boolean> sendMessage(Long channelId, String content) {
         String clientId = UUID.randomUUID().toString();
+        log.info("Sending message to channel {}: clientId={}, contentLength={}",
+                channelId, clientId, content != null ? content.length() : 0);
+        ChatWsMessage message = ChatWsMessage.sendMessage(channelId, content, clientId);
+        return send(message);
+    }
+
+    /**
+     * Send a chat message with a specific client ID for deduplication
+     */
+    public CompletableFuture<Boolean> sendMessageWithClientId(Long channelId, String content, String clientId) {
         ChatWsMessage message = ChatWsMessage.sendMessage(channelId, content, clientId);
         return send(message);
     }
@@ -311,15 +414,21 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
         if (!connected || webSocket == null) {
-            log.warn("Cannot send message: WebSocket not connected");
+            log.warn("Cannot send message: WebSocket not connected (connected={}, webSocket={})",
+                    connected, webSocket != null ? "present" : "null");
             future.complete(false);
             return future;
         }
 
         try {
             String json = objectMapper.writeValueAsString(message);
+            log.debug("Sending WebSocket message: type={}, action={}, json length={}",
+                    message.getType(), message.getAction(), json.length());
             webSocket.sendText(json, true)
-                    .thenAccept(ws -> future.complete(true))
+                    .thenAccept(ws -> {
+                        log.debug("WebSocket message sent successfully: type={}", message.getType());
+                        future.complete(true);
+                    })
                     .exceptionally(e -> {
                         log.error("Error sending WebSocket message: {}", e.getMessage());
                         future.complete(false);
@@ -342,6 +451,10 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
         this.onMessageReceived = handler;
     }
 
+    public void setOnHistoryReceived(Consumer<java.util.List<TalkMessageDTO>> handler) {
+        this.onHistoryReceived = handler;
+    }
+
     public void setOnTypingIndicator(Consumer<ChatWsMessage> handler) {
         this.onTypingIndicator = handler;
     }
@@ -356,6 +469,18 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
 
     public void setOnError(Consumer<String> handler) {
         this.onError = handler;
+    }
+
+    public void setOnNewsReceived(Consumer<TalkNewsItemDTO> handler) {
+        this.onNewsReceived = handler;
+    }
+
+    public void setOnAlertReceived(Consumer<TalkAlertDTO> handler) {
+        this.onAlertReceived = handler;
+    }
+
+    public void setOnInvitationReceived(Consumer<TalkChannelInvitationDTO> handler) {
+        this.onInvitationReceived = handler;
     }
 
     private void notifyConnectionState(boolean connected) {

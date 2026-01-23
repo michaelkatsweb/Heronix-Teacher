@@ -7,11 +7,17 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -51,10 +57,14 @@ public class MainController {
 
     @FXML private BorderPane mainRoot;
     @FXML private StackPane contentArea;
+    @FXML private VBox sidebar;
 
     // Header elements
     @FXML private Label teacherNameLabel;
     @FXML private Label teacherSubjectLabel;
+    @FXML private Label appTitleLabel;
+    @FXML private Label appSubtitleLabel;
+    @FXML private Button sidebarToggleBtn;
     @FXML private Label networkStatusIcon;
     @FXML private Label networkStatusLabel;
     @FXML private Button themeToggleBtn;
@@ -81,8 +91,21 @@ public class MainController {
     @FXML private Label pendingSyncLabel;
     @FXML private Label lastSyncLabel;
 
+    // Collapsible sidebar elements
+    @FXML private VBox quickActionsSection;
+    @FXML private Label quickActionsLabel;
+    @FXML private Button syncNowBtn;
+    @FXML private Button exportBtn;
+    @FXML private VBox syncStatusCard;
+    @FXML private Label syncStatusLabel;
+
     private Timer networkCheckTimer;
     private String currentView = "dashboard";
+    private boolean sidebarExpanded = true;
+    private static final double SIDEBAR_EXPANDED_WIDTH = 220;
+    private static final double SIDEBAR_COLLAPSED_WIDTH = 60;
+    private static final double COMPACT_MODE_THRESHOLD = 1000;
+    private ChangeListener<Number> windowWidthListener;
 
     /**
      * Initialize controller
@@ -103,7 +126,153 @@ public class MainController {
         // Update sync status display
         updateSyncStatus();
 
+        // Setup responsive behavior after scene is available
+        Platform.runLater(this::setupResponsiveBehavior);
+
         log.info("Main Controller initialized successfully");
+    }
+
+    /**
+     * Setup responsive behavior based on window size
+     */
+    private void setupResponsiveBehavior() {
+        if (mainRoot.getScene() != null && mainRoot.getScene().getWindow() != null) {
+            windowWidthListener = (obs, oldVal, newVal) -> {
+                double width = newVal.doubleValue();
+                handleWindowResize(width);
+            };
+            mainRoot.getScene().widthProperty().addListener(windowWidthListener);
+            // Initial check
+            handleWindowResize(mainRoot.getScene().getWidth());
+        }
+    }
+
+    /**
+     * Handle window resize for responsive layout
+     */
+    private void handleWindowResize(double windowWidth) {
+        Platform.runLater(() -> {
+            // Auto-collapse sidebar on smaller screens
+            if (windowWidth < COMPACT_MODE_THRESHOLD && sidebarExpanded) {
+                collapseSidebar(false);
+            }
+
+            // Update header elements visibility based on width
+            if (appSubtitleLabel != null) {
+                appSubtitleLabel.setVisible(windowWidth >= 900);
+                appSubtitleLabel.setManaged(windowWidth >= 900);
+            }
+        });
+    }
+
+    /**
+     * Toggle sidebar expanded/collapsed state
+     */
+    @FXML
+    public void toggleSidebar() {
+        if (sidebarExpanded) {
+            collapseSidebar(true);
+        } else {
+            expandSidebar(true);
+        }
+    }
+
+    /**
+     * Collapse the sidebar with optional animation
+     */
+    private void collapseSidebar(boolean animate) {
+        sidebarExpanded = false;
+
+        if (animate) {
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(200),
+                    new KeyValue(sidebar.prefWidthProperty(), SIDEBAR_COLLAPSED_WIDTH)
+                )
+            );
+            timeline.setOnFinished(e -> updateSidebarContent(false));
+            timeline.play();
+        } else {
+            sidebar.setPrefWidth(SIDEBAR_COLLAPSED_WIDTH);
+            updateSidebarContent(false);
+        }
+
+        sidebarToggleBtn.setText("☰");
+        log.debug("Sidebar collapsed");
+    }
+
+    /**
+     * Expand the sidebar with optional animation
+     */
+    private void expandSidebar(boolean animate) {
+        sidebarExpanded = true;
+        updateSidebarContent(true);
+
+        if (animate) {
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(200),
+                    new KeyValue(sidebar.prefWidthProperty(), SIDEBAR_EXPANDED_WIDTH)
+                )
+            );
+            timeline.play();
+        } else {
+            sidebar.setPrefWidth(SIDEBAR_EXPANDED_WIDTH);
+        }
+
+        sidebarToggleBtn.setText("✕");
+        log.debug("Sidebar expanded");
+    }
+
+    /**
+     * Update sidebar content visibility based on expanded state
+     */
+    private void updateSidebarContent(boolean expanded) {
+        // Update navigation button text
+        updateNavButtonText(dashboardBtn, "📊", "Dashboard", expanded);
+        updateNavButtonText(gradebookBtn, "📚", "Gradebook", expanded);
+        updateNavButtonText(attendanceBtn, "✓", "Attendance", expanded);
+        updateNavButtonText(hallpassBtn, "🎫", "Hall Pass", expanded);
+        updateNavButtonText(clubsBtn, "🎭", "Clubs", expanded);
+        updateNavButtonText(walletBtn, "💰", "Wallet", expanded);
+        updateNavButtonText(commHubBtn, "💬", "H-Talk", expanded);
+        updateNavButtonText(deviceMgmtBtn, "📱", "Devices", expanded);
+        if (gameAnalyticsBtn != null) {
+            updateNavButtonText(gameAnalyticsBtn, "🎮", "Analytics", expanded);
+        }
+        if (codeBreakerBtn != null) {
+            updateNavButtonText(codeBreakerBtn, "🔐", "Code", expanded);
+        }
+
+        // Hide/show quick actions section
+        if (quickActionsSection != null) {
+            quickActionsSection.setVisible(expanded);
+            quickActionsSection.setManaged(expanded);
+        }
+        if (quickActionsLabel != null) {
+            quickActionsLabel.setVisible(expanded);
+            quickActionsLabel.setManaged(expanded);
+        }
+        if (syncNowBtn != null) {
+            syncNowBtn.setText(expanded ? "📥 Sync" : "📥");
+        }
+        if (exportBtn != null) {
+            exportBtn.setText(expanded ? "📤 Export" : "📤");
+        }
+
+        // Hide/show sync status card details
+        if (syncStatusCard != null) {
+            syncStatusCard.setVisible(expanded);
+            syncStatusCard.setManaged(expanded);
+        }
+    }
+
+    /**
+     * Update navigation button text based on expanded state
+     */
+    private void updateNavButtonText(Button button, String icon, String label, boolean expanded) {
+        if (button != null) {
+            button.setText(expanded ? icon + " " + label : icon);
+            button.setAlignment(expanded ? javafx.geometry.Pos.CENTER_LEFT : javafx.geometry.Pos.CENTER);
+        }
     }
 
     /**
@@ -487,6 +656,10 @@ public class MainController {
     public void cleanup() {
         if (networkCheckTimer != null) {
             networkCheckTimer.cancel();
+        }
+        // Remove window resize listener
+        if (windowWidthListener != null && mainRoot.getScene() != null) {
+            mainRoot.getScene().widthProperty().removeListener(windowWidthListener);
         }
         log.info("Main Controller cleanup completed");
     }

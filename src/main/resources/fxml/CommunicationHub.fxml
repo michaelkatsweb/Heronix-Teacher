@@ -4,87 +4,100 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
+<BorderPane fx:id="rootPane"
+            xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.heronix.teacher.ui.controller.CommunicationHubController"
             styleClass="content-area">
 
-    <!-- Top: News Ticker Section -->
+    <!-- Top: News Ticker Banner -->
     <top>
-        <VBox styleClass="card" style="-fx-padding: 0;">
-            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 10 15;">
-                <Label text="📰 Latest News" styleClass="text-bold" style="-fx-font-size: 14px;"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Button text="⏸" fx:id="pauseNewsBtn" onAction="#handlePauseNews"
-                        styleClass="button-secondary" prefWidth="40" prefHeight="30">
-                    <tooltip>
-                        <Tooltip text="Pause news ticker"/>
-                    </tooltip>
-                </Button>
-            </HBox>
-
-            <!-- Scrolling News Ticker -->
+        <HBox styleClass="news-ticker-banner" alignment="CENTER_LEFT" spacing="10"
+              style="-fx-padding: 6 15; -fx-background-color: linear-gradient(to right, #5865F2, #7289DA); -fx-min-height: 36; -fx-max-height: 36;">
+            <Label text="📰" style="-fx-font-size: 14px;"/>
+            <Label text="NEWS" styleClass="news-ticker-badge"/>
             <ScrollPane fx:id="newsScrollPane"
-                       styleClass="news-scroll-pane"
+                       styleClass="news-banner-scroll"
                        fitToHeight="true"
                        vbarPolicy="NEVER"
                        hbarPolicy="NEVER"
-                       pannable="false">
-                <VBox fx:id="newsTickerContainer" spacing="8" styleClass="news-ticker-container">
-                    <!-- News items will be added programmatically -->
-                </VBox>
+                       pannable="false"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-background-color: transparent; -fx-max-height: 24;">
+                <HBox fx:id="newsTickerContainer" spacing="20" alignment="CENTER_LEFT" styleClass="news-ticker-container">
+                    <!-- News items will be added programmatically as horizontal scrolling text -->
+                </HBox>
             </ScrollPane>
-
-            <Separator/>
-        </VBox>
+            <Button text="⏸" fx:id="pauseNewsBtn" onAction="#handlePauseNews"
+                    styleClass="news-banner-button" prefWidth="24" prefHeight="24">
+                <tooltip>
+                    <Tooltip text="Pause news ticker"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </top>
 
-    <!-- Left: User List and Channels -->
+    <!-- Left: Channels and Users Dropdown -->
     <left>
-        <VBox spacing="10" style="-fx-padding: 15; -fx-min-width: 250; -fx-pref-width: 250;">
+        <VBox spacing="12" style="-fx-padding: 15; -fx-min-width: 260; -fx-pref-width: 280;">
 
-            <!-- Channels Section -->
-            <VBox styleClass="card" spacing="10" style="-fx-padding: 12;">
-                <HBox alignment="CENTER_LEFT" spacing="10">
-                    <Label text="📢 Channels" styleClass="text-bold" style="-fx-font-size: 13px;"/>
+            <!-- Users Dropdown Section -->
+            <HBox styleClass="card" spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 10;">
+                <Label text="👥" style="-fx-font-size: 14px;"/>
+                <ComboBox fx:id="usersComboBox" promptText="Select user to message..."
+                          styleClass="users-combo-box" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+                </ComboBox>
+                <HBox alignment="CENTER" spacing="4" style="-fx-padding: 0 4;">
+                    <Region styleClass="status-dot, status-online" prefWidth="8" prefHeight="8"/>
+                    <Label fx:id="onlineCountLabel" text="0" styleClass="success-text" style="-fx-font-size: 11px; -fx-font-weight: bold;"/>
+                </HBox>
+            </HBox>
+
+            <!-- Channels Section (Extended) -->
+            <VBox styleClass="card" spacing="8" VBox.vgrow="ALWAYS" style="-fx-padding: 12;">
+                <HBox alignment="CENTER_LEFT" spacing="8" styleClass="channel-list-header">
+                    <Label text="📢" style="-fx-font-size: 14px;"/>
+                    <Label text="CHANNELS" styleClass="channel-list-header-text"/>
                     <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="invitationBadgeBtn" text="✉" onAction="#handleShowInvitations"
+                            styleClass="invitation-button" prefWidth="28" prefHeight="28"
+                            visible="false" managed="false">
+                        <tooltip>
+                            <Tooltip text="View pending invitations"/>
+                        </tooltip>
+                    </Button>
                     <Button text="+" onAction="#handleAddChannel"
-                            styleClass="button-success" prefWidth="30" prefHeight="25" style="-fx-font-size: 14px;">
+                            styleClass="channel-list-add-button" prefWidth="28" prefHeight="28">
                         <tooltip>
                             <Tooltip text="Create new channel"/>
                         </tooltip>
                     </Button>
                 </HBox>
 
-                <ListView fx:id="channelsList" prefHeight="200" styleClass="channel-list">
-                    <placeholder>
-                        <VBox alignment="CENTER" spacing="5" style="-fx-padding: 20;">
-                            <Label text="📢" style="-fx-font-size: 24px;"/>
-                            <Label text="No channels yet" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
-                        </VBox>
-                    </placeholder>
-                </ListView>
-            </VBox>
-
-            <!-- Users/Members Section -->
-            <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS" style="-fx-padding: 12;">
-                <HBox alignment="CENTER_LEFT" spacing="10">
-                    <Label text="👥 Online Users" styleClass="text-bold" style="-fx-font-size: 13px;"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="onlineCountLabel" text="0" styleClass="success-text" style="-fx-font-size: 11px; -fx-font-weight: bold;"/>
+                <HBox styleClass="search-container" alignment="CENTER_LEFT">
+                    <Label text="🔍" styleClass="search-icon" style="-fx-padding: 0 8 0 0;"/>
+                    <TextField fx:id="channelSearchField" promptText="Search channels..." styleClass="search-field" HBox.hgrow="ALWAYS"/>
                 </HBox>
 
-                <TextField fx:id="userSearchField" promptText="Search users..." style="-fx-pref-height: 30;"/>
-
-                <ListView fx:id="usersList" VBox.vgrow="ALWAYS" styleClass="user-list">
-                    <placeholder>
-                        <VBox alignment="CENTER" spacing="5" style="-fx-padding: 20;">
-                            <Label text="👤" style="-fx-font-size: 24px;"/>
-                            <Label text="No users online" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
-                        </VBox>
-                    </placeholder>
-                </ListView>
+                <ScrollPane fx:id="channelsScrollPane" VBox.vgrow="ALWAYS"
+                           styleClass="channels-scroll-pane"
+                           fitToWidth="true"
+                           vbarPolicy="AS_NEEDED"
+                           hbarPolicy="NEVER">
+                    <ListView fx:id="channelsList" styleClass="channel-list">
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="8" styleClass="empty-state-container">
+                                <Label text="📢" styleClass="empty-state-icon"/>
+                                <Label text="No channels" styleClass="empty-state-title" style="-fx-font-size: 13px;"/>
+                                <Label text="Click + to create one" styleClass="empty-state-message" style="-fx-font-size: 11px;"/>
+                            </VBox>
+                        </placeholder>
+                    </ListView>
+                </ScrollPane>
             </VBox>
+
+            <!-- Hidden ListView for users (used for data, replaced by ComboBox in UI) -->
+            <ListView fx:id="usersList" visible="false" managed="false"/>
 
         </VBox>
     </left>
@@ -94,24 +107,61 @@
         <VBox spacing="0" style="-fx-padding: 15 15 15 0;">
 
             <!-- Chat Header -->
-            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="card"
-                  style="-fx-padding: 12; -fx-background-radius: 8 8 0 0;">
-                <Label fx:id="chatTitleLabel" text="💬 General Chat" styleClass="text-bold" style="-fx-font-size: 16px;"/>
+            <HBox alignment="CENTER_LEFT" spacing="12" styleClass="chat-header">
+                <VBox spacing="2">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="💬" style="-fx-font-size: 18px;"/>
+                        <Label fx:id="chatTitleLabel" text="General Chat" styleClass="chat-header-title"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label fx:id="typingIndicatorLabel" text="" styleClass="typing-indicator-text"/>
+                        <Label fx:id="chatMemberCountLabel" text="0 members" styleClass="chat-header-subtitle"/>
+                    </HBox>
+                </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="chatMemberCountLabel" text="0 members" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
-                <Separator orientation="VERTICAL"/>
-                <Button text="ℹ" onAction="#handleChatInfo"
-                        styleClass="button-secondary" prefWidth="35" prefHeight="30">
-                    <tooltip>
-                        <Tooltip text="Chat info"/>
-                    </tooltip>
-                </Button>
-                <Button text="⚙" onAction="#handleChatSettings"
-                        styleClass="button-secondary" prefWidth="35" prefHeight="30">
-                    <tooltip>
-                        <Tooltip text="Chat settings"/>
-                    </tooltip>
-                </Button>
+                <HBox spacing="4" alignment="CENTER_RIGHT">
+                    <Button text="🔍" onAction="#handleSearchMessages"
+                            styleClass="chat-header-button" prefWidth="36" prefHeight="36">
+                        <tooltip>
+                            <Tooltip text="Search messages"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="📌" onAction="#handleShowPinnedMessages"
+                            styleClass="chat-header-button" prefWidth="36" prefHeight="36">
+                        <tooltip>
+                            <Tooltip text="View pinned messages"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="👥" onAction="#handleShowMembers"
+                            styleClass="chat-header-button" prefWidth="36" prefHeight="36">
+                        <tooltip>
+                            <Tooltip text="Channel members"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="ℹ" onAction="#handleChatInfo"
+                            styleClass="chat-header-button" prefWidth="36" prefHeight="36">
+                        <tooltip>
+                            <Tooltip text="Chat info"/>
+                        </tooltip>
+                    </Button>
+                    <Button text="⚙" onAction="#handleChatSettings"
+                            styleClass="chat-header-button" prefWidth="36" prefHeight="36">
+                        <tooltip>
+                            <Tooltip text="Chat settings"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </HBox>
+
+            <!-- Reply Preview Bar (hidden by default) -->
+            <HBox fx:id="replyPreviewBar" alignment="CENTER_LEFT" spacing="10" styleClass="reply-preview-bar"
+                  visible="false" managed="false" style="-fx-padding: 8 12;">
+                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                    <Label fx:id="replyPreviewSender" text="" styleClass="reply-preview-sender"/>
+                    <Label fx:id="replyPreviewContent" text="" styleClass="reply-preview-content"/>
+                </VBox>
+                <Button fx:id="cancelReplyBtn" text="✕" onAction="#handleCancelReply"
+                        styleClass="reply-cancel-button" prefWidth="24" prefHeight="24"/>
             </HBox>
 
             <!-- Chat Messages Area -->
@@ -121,48 +171,83 @@
                        styleClass="chat-scroll-pane"
                        vbarPolicy="AS_NEEDED"
                        hbarPolicy="NEVER">
-                <VBox fx:id="chatMessagesContainer" spacing="10" styleClass="chat-messages-container">
+                <VBox fx:id="chatMessagesContainer" spacing="12" styleClass="chat-messages-container">
                     <!-- Chat messages will be added programmatically -->
 
                     <!-- Welcome Message -->
-                    <VBox alignment="CENTER" spacing="10" style="-fx-padding: 40;">
-                        <Label text="💬" style="-fx-font-size: 48px;"/>
-                        <Label text="Welcome to Communication Hub" styleClass="text-bold" style="-fx-font-size: 16px;"/>
-                        <Label text="Start a conversation by typing a message below"
-                               styleClass="text-secondary" style="-fx-font-size: 12px;"/>
+                    <VBox alignment="CENTER" spacing="12" styleClass="empty-state-container">
+                        <Label text="💬" styleClass="empty-state-icon"/>
+                        <Label text="Welcome to Communication Hub" styleClass="empty-state-title"/>
+                        <Label text="Select a channel or start a conversation" styleClass="empty-state-message"/>
                     </VBox>
 
                 </VBox>
             </ScrollPane>
 
             <!-- Chat Input Area -->
-            <HBox spacing="10" styleClass="card"
-                  style="-fx-padding: 12; -fx-background-radius: 0 0 8 8;">
+            <VBox spacing="6" styleClass="chat-input-wrapper">
+                <!-- Input Row -->
+                <HBox spacing="10" styleClass="chat-input-container" alignment="CENTER">
 
-                <Button text="📎" onAction="#handleAttachment"
-                        styleClass="button-secondary" prefWidth="40" prefHeight="40">
-                    <tooltip>
-                        <Tooltip text="Attach file"/>
-                    </tooltip>
-                </Button>
+                    <Button text="Attach" onAction="#handleAttachment"
+                            styleClass="chat-attachment-button" prefWidth="70" prefHeight="40">
+                        <tooltip>
+                            <Tooltip text="Attach file"/>
+                        </tooltip>
+                    </Button>
 
-                <Button text="😊" onAction="#handleEmoji"
-                        styleClass="button-secondary" prefWidth="40" prefHeight="40">
-                    <tooltip>
-                        <Tooltip text="Insert emoji"/>
-                    </tooltip>
-                </Button>
+                    <Button text="😀" onAction="#handleEmoji"
+                            styleClass="chat-emoji-button" prefWidth="40" prefHeight="40">
+                        <tooltip>
+                            <Tooltip text="Insert emoji"/>
+                        </tooltip>
+                    </Button>
 
-                <TextArea fx:id="messageInputArea"
-                         promptText="Type your message here..."
-                         wrapText="true"
-                         prefRowCount="2"
-                         HBox.hgrow="ALWAYS"
-                         style="-fx-pref-height: 50;"/>
+                    <TextArea fx:id="messageInputArea"
+                             promptText="Type your message..."
+                             wrapText="true"
+                             prefRowCount="2"
+                             HBox.hgrow="ALWAYS"
+                             styleClass="chat-input-field"
+                             style="-fx-pref-height: 50;"/>
 
-                <Button text="📤 Send" fx:id="sendMessageBtn" onAction="#handleSendMessage"
-                        styleClass="button-primary" prefWidth="100" prefHeight="40"/>
-            </HBox>
+                    <Button text="Send" fx:id="sendMessageBtn" onAction="#handleSendMessage"
+                            styleClass="chat-send-button" prefWidth="90" prefHeight="40"/>
+                </HBox>
+
+                <!-- Status Bar Row -->
+                <HBox spacing="12" alignment="CENTER_LEFT" styleClass="chat-status-bar" style="-fx-padding: 6 10;">
+                    <!-- My Status Dropdown -->
+                    <HBox alignment="CENTER_LEFT" spacing="6">
+                        <Region fx:id="myStatusIndicator" styleClass="status-dot, status-online" prefWidth="10" prefHeight="10"/>
+                        <MenuButton fx:id="statusMenuButton" text="Online" styleClass="status-menu-button-compact" prefWidth="100">
+                            <items>
+                                <MenuItem fx:id="statusOnline" text="🟢  Online" onAction="#handleSetStatusOnline"/>
+                                <MenuItem fx:id="statusAway" text="🟡  Away" onAction="#handleSetStatusAway"/>
+                                <MenuItem fx:id="statusBusy" text="🔴  Busy" onAction="#handleSetStatusBusy"/>
+                                <MenuItem fx:id="statusInClass" text="📚  In Class" onAction="#handleSetStatusInClass"/>
+                                <MenuItem fx:id="statusSilent" text="🔕  Silent Mode" onAction="#handleSetStatusSilent"/>
+                            </items>
+                        </MenuButton>
+                    </HBox>
+
+                    <Separator orientation="VERTICAL" prefHeight="20"/>
+
+                    <!-- Status Message -->
+                    <TextField fx:id="statusMessageField" promptText="Status message..."
+                               styleClass="status-message-field-compact" prefWidth="200" maxWidth="250"/>
+
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <!-- Sound Toggle -->
+                    <Button fx:id="soundToggleBtn" text="🔊" onAction="#handleToggleSound"
+                            styleClass="chat-header-button, sound-toggle-button" prefWidth="32" prefHeight="32">
+                        <tooltip>
+                            <Tooltip text="Toggle notification sounds"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
 
         </VBox>
     </center>

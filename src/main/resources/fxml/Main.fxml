@@ -10,17 +10,30 @@
             fx:id="mainRoot"
             fx:controller="com.heronix.teacher.ui.controller.MainController"
             prefWidth="1200" prefHeight="800"
+            minWidth="800" minHeight="600"
             styleClass="root">
 
     <!-- Top Navigation Bar -->
     <top>
-        <HBox styleClass="header-bar" spacing="15" alignment="CENTER_LEFT">
+        <HBox styleClass="header-bar" spacing="10" alignment="CENTER_LEFT">
             <padding>
-                <Insets top="10" right="20" bottom="10" left="20"/>
+                <Insets top="10" right="15" bottom="10" left="15"/>
             </padding>
 
-            <!-- App Title -->
-            <Label text="Welcome to EduSchedulerPro - Teacher Portal" styleClass="app-title" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            <!-- Sidebar Toggle Button -->
+            <Button fx:id="sidebarToggleBtn" text="☰" onAction="#toggleSidebar"
+                    styleClass="button-icon, sidebar-toggle-btn"
+                    style="-fx-font-size: 18px; -fx-min-width: 40px; -fx-min-height: 40px;">
+                <tooltip>
+                    <Tooltip text="Toggle Sidebar"/>
+                </tooltip>
+            </Button>
+
+            <!-- App Title - responsive: hide subtitle on smaller screens -->
+            <VBox alignment="CENTER_LEFT" spacing="0">
+                <Label fx:id="appTitleLabel" text="Heronix" styleClass="app-title" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <Label fx:id="appSubtitleLabel" text="Teacher Portal" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            </VBox>
 
             <Region HBox.hgrow="ALWAYS"/>
 
@@ -89,69 +102,71 @@
         </HBox>
     </top>
 
-    <!-- Left Sidebar Navigation -->
+    <!-- Left Sidebar Navigation - Collapsible -->
     <left>
-        <VBox styleClass="sidebar" spacing="10" prefWidth="200" style="-fx-padding: 20;">
+        <VBox fx:id="sidebar" styleClass="sidebar" spacing="8" prefWidth="220" minWidth="60" style="-fx-padding: 15;">
 
-            <!-- Navigation Buttons -->
+            <!-- Navigation Buttons with icons that work when collapsed -->
             <Button fx:id="dashboardBtn" text="📊 Dashboard" onAction="#showDashboard"
                     styleClass="nav-button, nav-button-active"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="gradebookBtn" text="📚 Gradebook" onAction="#showGradebook"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="attendanceBtn" text="✓ Attendance" onAction="#showAttendance"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="hallpassBtn" text="🎫 Hall Pass" onAction="#showHallPass"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="clubsBtn" text="🎭 Clubs" onAction="#showClubs"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="walletBtn" text="💰 Class Wallet" onAction="#showWallet"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
-            <Button fx:id="commHubBtn" text="💬 Communication Hub" onAction="#showCommunicationHub"
+            <Button fx:id="commHubBtn" text="💬 H-Talk" onAction="#showCommunicationHub"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
-            <Button fx:id="deviceMgmtBtn" text="📱 Device Management" onAction="#showDeviceManagement"
+            <Button fx:id="deviceMgmtBtn" text="📱 Devices" onAction="#showDeviceManagement"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
-            <Button fx:id="gameAnalyticsBtn" text="🎮 Game Analytics" onAction="#showGameAnalytics"
+            <Button fx:id="gameAnalyticsBtn" text="🎮 Analytics" onAction="#showGameAnalytics"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Button fx:id="codeBreakerBtn" text="🔐 Code Breaker" onAction="#showCodeBreaker"
                     styleClass="nav-button"
-                    maxWidth="Infinity" prefHeight="45"/>
+                    maxWidth="Infinity" prefHeight="42"/>
 
             <Separator/>
 
-            <!-- Quick Actions -->
-            <Label text="Quick Actions" styleClass="text-secondary" style="-fx-font-size: 11px; -fx-padding: 10 0 5 0;"/>
+            <!-- Quick Actions Section - collapsible -->
+            <VBox fx:id="quickActionsSection" spacing="8">
+                <Label fx:id="quickActionsLabel" text="Quick Actions" styleClass="text-secondary" style="-fx-font-size: 11px; -fx-padding: 8 0 4 0;"/>
 
-            <Button text="📥 Sync Now" onAction="#syncNow"
-                    styleClass="button-primary"
-                    maxWidth="Infinity" prefHeight="35"/>
+                <Button fx:id="syncNowBtn" text="📥 Sync" onAction="#syncNow"
+                        styleClass="button-primary"
+                        maxWidth="Infinity" prefHeight="32"/>
 
-            <Button text="📤 Export Data" onAction="#exportData"
-                    styleClass="button-secondary"
-                    maxWidth="Infinity" prefHeight="35"/>
+                <Button fx:id="exportBtn" text="📤 Export" onAction="#exportData"
+                        styleClass="button-secondary"
+                        maxWidth="Infinity" prefHeight="32"/>
+            </VBox>
 
             <Region VBox.vgrow="ALWAYS"/>
 
-            <!-- Sync Status at Bottom -->
-            <VBox styleClass="card" spacing="5" style="-fx-padding: 10;">
-                <Label text="Last Sync" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
+            <!-- Sync Status at Bottom - collapsible -->
+            <VBox fx:id="syncStatusCard" styleClass="card, sync-status-card" spacing="4" style="-fx-padding: 8;">
+                <Label fx:id="syncStatusLabel" text="Last Sync" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
                 <Label fx:id="lastSyncLabel" text="Never" styleClass="text-bold" style="-fx-font-size: 11px;"/>
             </VBox>
 
