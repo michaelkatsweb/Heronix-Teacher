@@ -15,7 +15,14 @@ import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -31,11 +38,20 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
 
     private WebSocket webSocket;
     private String wsUrl;
-    private boolean connected = false;
-    private boolean shouldReconnect = true;
+    private volatile boolean connected = false;
+    private volatile boolean shouldReconnect = true;
+    private volatile boolean connecting = false;
     private int reconnectAttempts = 0;
-    private static final int MAX_RECONNECT_ATTEMPTS = 5;
-    private static final int RECONNECT_DELAY_SECONDS = 5;
+    private static final int MAX_RECONNECT_ATTEMPTS = 10;
+    private static final int BASE_RECONNECT_DELAY_MS = 1000;
+    private static final int MAX_RECONNECT_DELAY_MS = 60000;
+    private static final int HEARTBEAT_INTERVAL_SECONDS = 30;
+    private static final int CONNECTION_TIMEOUT_SECONDS = 15;
+
+    // Pending message queue for when connection is temporarily lost
+    private final BlockingQueue<ChatWsMessage> pendingMessages = new LinkedBlockingQueue<>(100);
+    private ScheduledFuture<?> heartbeatTask;
+    private volatile long lastPongReceived = System.currentTimeMillis();
 
     // Message handlers
     private Consumer<TalkMessageDTO> onMessageReceived;
@@ -78,25 +94,37 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
     private CompletableFuture<Boolean> doConnect() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
+        if (connecting) {
+            log.debug("Already connecting, returning pending future");
+            future.complete(false);
+            return future;
+        }
+
+        connecting = true;
+
         try {
             HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
+                    .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                     .build();
 
             client.newWebSocketBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
+                    .connectTimeout(Duration.ofSeconds(CONNECTION_TIMEOUT_SECONDS))
                     .buildAsync(URI.create(wsUrl), this)
                     .thenAccept(ws -> {
                         this.webSocket = ws;
                         this.connected = true;
+                        this.connecting = false;
                         this.reconnectAttempts = 0;
                         log.info("WebSocket connected to Heronix-Talk");
                         notifyConnectionState(true);
+                        startHeartbeat();
+                        flushPendingMessages();
                         future.complete(true);
                     })
                     .exceptionally(e -> {
                         log.error("WebSocket connection failed: {}", e.getMessage());
                         this.connected = false;
+                        this.connecting = false;
                         notifyConnectionState(false);
                         future.complete(false);
                         scheduleReconnect();
@@ -105,6 +133,7 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
 
         } catch (Exception e) {
             log.error("Error creating WebSocket connection", e);
+            connecting = false;
             future.complete(false);
         }
 
@@ -116,6 +145,7 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
      */
     public void disconnect() {
         shouldReconnect = false;
+        stopHeartbeat();
         if (webSocket != null) {
             try {
                 webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Client disconnect");
@@ -124,24 +154,100 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
             }
         }
         connected = false;
+        connecting = false;
         notifyConnectionState(false);
     }
 
     private void scheduleReconnect() {
         if (!shouldReconnect || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            log.warn("Max reconnect attempts reached or reconnect disabled");
+            log.warn("Max reconnect attempts reached ({}) or reconnect disabled", reconnectAttempts);
+            return;
+        }
+
+        if (connecting) {
+            log.debug("Already connecting, skipping reconnect schedule");
             return;
         }
 
         reconnectAttempts++;
-        int delay = RECONNECT_DELAY_SECONDS * reconnectAttempts;
-        log.info("Scheduling reconnect attempt {} in {} seconds", reconnectAttempts, delay);
+        // Exponential backoff with jitter
+        int delayMs = Math.min(BASE_RECONNECT_DELAY_MS * (1 << reconnectAttempts), MAX_RECONNECT_DELAY_MS);
+        delayMs += (int) (Math.random() * 1000); // Add jitter
+
+        log.info("Scheduling reconnect attempt {} in {}ms", reconnectAttempts, delayMs);
 
         scheduler.schedule(() -> {
-            if (shouldReconnect && !connected) {
+            if (shouldReconnect && !connected && !connecting) {
                 doConnect();
             }
-        }, delay, TimeUnit.SECONDS);
+        }, delayMs, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Start heartbeat to keep connection alive and detect stale connections
+     */
+    private void startHeartbeat() {
+        stopHeartbeat();
+        lastPongReceived = System.currentTimeMillis();
+
+        heartbeatTask = scheduler.scheduleAtFixedRate(() -> {
+            if (connected && webSocket != null) {
+                // Check if we've received a pong recently
+                long timeSinceLastPong = System.currentTimeMillis() - lastPongReceived;
+                if (timeSinceLastPong > HEARTBEAT_INTERVAL_SECONDS * 2 * 1000L) {
+                    log.warn("No pong received in {}ms, connection may be stale", timeSinceLastPong);
+                    handleStaleConnection();
+                    return;
+                }
+
+                // Send ping
+                try {
+                    webSocket.sendPing(ByteBuffer.wrap("ping".getBytes()));
+                } catch (Exception e) {
+                    log.debug("Error sending ping: {}", e.getMessage());
+                }
+            }
+        }, HEARTBEAT_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    private void stopHeartbeat() {
+        if (heartbeatTask != null && !heartbeatTask.isCancelled()) {
+            heartbeatTask.cancel(false);
+            heartbeatTask = null;
+        }
+    }
+
+    private void handleStaleConnection() {
+        log.warn("Handling stale connection - forcing reconnect");
+        connected = false;
+        notifyConnectionState(false);
+
+        if (webSocket != null) {
+            try {
+                webSocket.abort();
+            } catch (Exception e) {
+                log.debug("Error aborting stale connection: {}", e.getMessage());
+            }
+        }
+
+        if (shouldReconnect) {
+            scheduleReconnect();
+        }
+    }
+
+    /**
+     * Flush pending messages after reconnection
+     */
+    private void flushPendingMessages() {
+        if (pendingMessages.isEmpty()) return;
+
+        log.info("Flushing {} pending messages", pendingMessages.size());
+        scheduler.execute(() -> {
+            ChatWsMessage msg;
+            while ((msg = pendingMessages.poll()) != null && connected) {
+                send(msg);
+            }
+        });
     }
 
     // ========================================================================
@@ -171,6 +277,13 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
     @Override
     public CompletionStage<?> onPing(WebSocket webSocket, ByteBuffer message) {
         webSocket.sendPong(message);
+        webSocket.request(1);
+        return null;
+    }
+
+    @Override
+    public CompletionStage<?> onPong(WebSocket webSocket, ByteBuffer message) {
+        lastPongReceived = System.currentTimeMillis();
         webSocket.request(1);
         return null;
     }
@@ -414,6 +527,14 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
         if (!connected || webSocket == null) {
+            // Queue message for later delivery if it's a chat message
+            if (ChatWsMessage.TYPE_MESSAGE.equals(message.getType())) {
+                if (pendingMessages.offer(message)) {
+                    log.debug("Message queued for later delivery (queue size: {})", pendingMessages.size());
+                } else {
+                    log.warn("Pending message queue full, message dropped");
+                }
+            }
             log.warn("Cannot send message: WebSocket not connected (connected={}, webSocket={})",
                     connected, webSocket != null ? "present" : "null");
             future.complete(false);
@@ -431,6 +552,10 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
                     })
                     .exceptionally(e -> {
                         log.error("Error sending WebSocket message: {}", e.getMessage());
+                        // Queue for retry if it's a chat message
+                        if (ChatWsMessage.TYPE_MESSAGE.equals(message.getType())) {
+                            pendingMessages.offer(message);
+                        }
                         future.complete(false);
                         return null;
                     });
@@ -504,8 +629,29 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
     }
 
     public void shutdown() {
+        log.info("Shutting down WebSocket client...");
         shouldReconnect = false;
+        stopHeartbeat();
         disconnect();
+        pendingMessages.clear();
         scheduler.shutdown();
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        log.info("WebSocket client shutdown complete");
     }
+
+    /**
+     * Get connection statistics for monitoring
+     */
+    public ConnectionStats getConnectionStats() {
+        return new ConnectionStats(connected, reconnectAttempts, pendingMessages.size(), lastPongReceived);
+    }
+
+    public record ConnectionStats(boolean connected, int reconnectAttempts, int pendingMessageCount, long lastPongTime) {}
 }
