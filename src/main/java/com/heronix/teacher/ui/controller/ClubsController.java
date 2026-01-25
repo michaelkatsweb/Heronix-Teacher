@@ -15,10 +15,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
 
 /**
  * Clubs Controller
@@ -564,12 +577,149 @@ public class ClubsController {
     }
 
     /**
-     * Handle manage enrollment
+     * Handle manage enrollment - View and manage club members
      */
     @FXML
     public void handleManageEnrollment() {
-        showInfo("Manage Enrollment", "Enrollment management dialog will be implemented");
-        // FUTURE ENHANCEMENT: Enrollment Management Dialog - Framework placeholder, dialog UI pending
+        Club selected = clubsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showWarning("Please select a club first");
+            return;
+        }
+
+        log.info("Opening enrollment management for club: {}", selected.getName());
+
+        // Create dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Manage Enrollment - " + selected.getName());
+        dialog.setHeaderText("Club Members and Enrollment");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        dialog.setResizable(true);
+
+        // Main content
+        VBox mainContent = new VBox(15);
+        mainContent.setPadding(new Insets(20));
+        mainContent.setPrefWidth(600);
+        mainContent.setPrefHeight(450);
+
+        // Club info header
+        GridPane infoPane = new GridPane();
+        infoPane.setHgap(20);
+        infoPane.setVgap(5);
+        infoPane.setStyle("-fx-background-color: #e8f5e9; -fx-padding: 15; -fx-background-radius: 5;");
+
+        Label clubLabel = new Label("Club:");
+        Label clubValue = new Label(selected.getName());
+        clubValue.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        Label capacityLabel = new Label("Capacity:");
+        Integer current = selected.getCurrentEnrollment() != null ? selected.getCurrentEnrollment() : 0;
+        Integer max = selected.getMaxCapacity() != null ? selected.getMaxCapacity() : 0;
+        Label capacityValue = new Label(current + " / " + max);
+        capacityValue.setStyle(current >= max ? "-fx-text-fill: #f44336;" : "-fx-text-fill: #4caf50;");
+
+        Label availableLabel = new Label("Available:");
+        Integer available = selected.getAvailableSpots();
+        Label availableValue = new Label((available != null ? available : 0) + " spots");
+
+        infoPane.add(clubLabel, 0, 0);
+        infoPane.add(clubValue, 1, 0);
+        infoPane.add(capacityLabel, 2, 0);
+        infoPane.add(capacityValue, 3, 0);
+        infoPane.add(availableLabel, 4, 0);
+        infoPane.add(availableValue, 5, 0);
+
+        // Members list
+        Label membersTitle = new Label("Current Members");
+        membersTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        ListView<String> membersList = new ListView<>();
+        Set<Student> members = clubService.getClubMembers(selected.getId());
+
+        ObservableList<String> memberItems = FXCollections.observableArrayList();
+        for (Student s : members) {
+            memberItems.add(String.format("%s (%s) - Grade %d",
+                    s.getFullName(), s.getStudentId(), s.getGradeLevel()));
+        }
+        membersList.setItems(memberItems);
+        membersList.setPrefHeight(200);
+        VBox.setVgrow(membersList, Priority.ALWAYS);
+
+        if (members.isEmpty()) {
+            membersList.setPlaceholder(new Label("No members enrolled yet"));
+        }
+
+        // Statistics
+        HBox statsBox = new HBox(30);
+        statsBox.setAlignment(Pos.CENTER);
+        statsBox.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 10; -fx-background-radius: 5;");
+
+        Label totalLabel = new Label("Total Members: " + members.size());
+        totalLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+
+        Map<Integer, Long> gradeDistribution = members.stream()
+                .collect(Collectors.groupingBy(Student::getGradeLevel, Collectors.counting()));
+
+        StringBuilder gradeStats = new StringBuilder("By Grade: ");
+        gradeDistribution.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> gradeStats.append("G").append(e.getKey()).append(":").append(e.getValue()).append(" "));
+
+        Label gradeLabel = new Label(gradeStats.toString().trim());
+
+        statsBox.getChildren().addAll(totalLabel, gradeLabel);
+
+        // Action buttons
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button exportMembersBtn = new Button("Export Members");
+        exportMembersBtn.setOnAction(e -> exportClubMembers(selected, members));
+
+        buttonBox.getChildren().add(exportMembersBtn);
+
+        mainContent.getChildren().addAll(infoPane, membersTitle, membersList, statsBox, buttonBox);
+        dialog.getDialogPane().setContent(mainContent);
+
+        dialog.showAndWait();
+    }
+
+    /**
+     * Export club members to CSV
+     */
+    private void exportClubMembers(Club club, Set<Student> members) {
+        if (members.isEmpty()) {
+            showWarning("No members to export");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Club Members");
+        fileChooser.setInitialFileName(club.getName().replaceAll("[^a-zA-Z0-9]", "_") + "_members.csv");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        File file = fileChooser.showSaveDialog(clubsTable.getScene().getWindow());
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                writer.write('\ufeff');
+                writer.println("Student Name,Student ID,Grade Level,Email");
+
+                for (Student s : members) {
+                    writer.println(String.format("%s,%s,%d,%s",
+                            escapeCSV(s.getFullName()),
+                            s.getStudentId(),
+                            s.getGradeLevel(),
+                            s.getEmail() != null ? s.getEmail() : ""
+                    ));
+                }
+
+                showSuccess("Exported " + members.size() + " members to:\n" + file.getName());
+            } catch (Exception e) {
+                log.error("Error exporting club members", e);
+                showError("Failed to export: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -597,21 +747,190 @@ public class ClubsController {
     }
 
     /**
-     * Handle reports
+     * Handle reports - View club statistics and reports
      */
     @FXML
     public void handleReports() {
-        showInfo("Reports", "Club reports will be implemented");
-        // FUTURE ENHANCEMENT: Reports Dialog - Framework placeholder, dialog UI pending
+        log.info("Opening club reports dialog");
+
+        // Create dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Club Reports");
+        dialog.setHeaderText("Club Statistics & Reports");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        dialog.setResizable(true);
+
+        // Main content
+        VBox mainContent = new VBox(15);
+        mainContent.setPadding(new Insets(20));
+        mainContent.setPrefWidth(650);
+        mainContent.setPrefHeight(500);
+
+        // Overall Statistics
+        GridPane statsPane = new GridPane();
+        statsPane.setHgap(30);
+        statsPane.setVgap(10);
+        statsPane.setStyle("-fx-background-color: #e3f2fd; -fx-padding: 15; -fx-background-radius: 5;");
+
+        Label statsTitle = new Label("Overall Statistics");
+        statsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+        statsPane.add(statsTitle, 0, 0, 4, 1);
+
+        try {
+            Map<String, Object> stats = clubService.getClubStatistics();
+
+            Long totalClubs = (Long) stats.get("totalClubs");
+            Long totalMembers = (Long) stats.get("totalMembers");
+            Long clubsWithSpace = (Long) stats.get("clubsWithSpace");
+
+            addReportStat(statsPane, "Total Clubs:", String.valueOf(totalClubs), "#2196f3", 0, 1);
+            addReportStat(statsPane, "Total Members:", String.valueOf(totalMembers), "#4caf50", 2, 1);
+            addReportStat(statsPane, "Clubs with Space:", String.valueOf(clubsWithSpace), "#ff9800", 0, 2);
+            addReportStat(statsPane, "Categories:", String.valueOf(clubService.getAllCategories().size()), "#9c27b0", 2, 2);
+
+        } catch (Exception e) {
+            log.error("Error loading club statistics", e);
+            statsPane.add(new Label("Error loading statistics"), 0, 1);
+        }
+
+        // Clubs by Category
+        VBox categorySection = new VBox(10);
+        Label categoryTitle = new Label("Clubs by Category");
+        categoryTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        GridPane categoryGrid = new GridPane();
+        categoryGrid.setHgap(20);
+        categoryGrid.setVgap(5);
+        categoryGrid.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 10; -fx-background-radius: 5;");
+
+        Map<String, Long> categoryDistribution = clubs.stream()
+                .filter(c -> c.getCategory() != null)
+                .collect(Collectors.groupingBy(Club::getCategory, Collectors.counting()));
+
+        int row = 0;
+        for (Map.Entry<String, Long> entry : categoryDistribution.entrySet()) {
+            Label catLabel = new Label(entry.getKey() + ":");
+            Label countLabel = new Label(entry.getValue() + " clubs");
+            countLabel.setStyle("-fx-font-weight: bold;");
+            categoryGrid.add(catLabel, 0, row);
+            categoryGrid.add(countLabel, 1, row);
+            row++;
+        }
+
+        categorySection.getChildren().addAll(categoryTitle, categoryGrid);
+
+        // Top Clubs by Enrollment
+        VBox topClubsSection = new VBox(10);
+        Label topClubsTitle = new Label("Top 5 Clubs by Enrollment");
+        topClubsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        GridPane topClubsGrid = new GridPane();
+        topClubsGrid.setHgap(20);
+        topClubsGrid.setVgap(5);
+        topClubsGrid.setStyle("-fx-background-color: #fff3e0; -fx-padding: 10; -fx-background-radius: 5;");
+
+        List<Club> topClubs = clubs.stream()
+                .sorted((c1, c2) -> {
+                    Integer e1 = c1.getCurrentEnrollment() != null ? c1.getCurrentEnrollment() : 0;
+                    Integer e2 = c2.getCurrentEnrollment() != null ? c2.getCurrentEnrollment() : 0;
+                    return e2.compareTo(e1);
+                })
+                .limit(5)
+                .collect(Collectors.toList());
+
+        row = 0;
+        for (Club club : topClubs) {
+            Label nameLabel = new Label((row + 1) + ". " + club.getName());
+            Integer enrollment = club.getCurrentEnrollment() != null ? club.getCurrentEnrollment() : 0;
+            Label enrollLabel = new Label(enrollment + " members");
+            enrollLabel.setStyle("-fx-font-weight: bold;");
+            topClubsGrid.add(nameLabel, 0, row);
+            topClubsGrid.add(enrollLabel, 1, row);
+            row++;
+        }
+
+        topClubsSection.getChildren().addAll(topClubsTitle, topClubsGrid);
+
+        // Export button
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        Button exportReportBtn = new Button("Export Full Report");
+        exportReportBtn.setOnAction(e -> handleExport());
+        buttonBox.getChildren().add(exportReportBtn);
+
+        mainContent.getChildren().addAll(statsPane, categorySection, topClubsSection, buttonBox);
+        dialog.getDialogPane().setContent(mainContent);
+
+        dialog.showAndWait();
     }
 
     /**
-     * Handle export
+     * Helper to add stat to report grid
+     */
+    private void addReportStat(GridPane pane, String label, String value, String color, int col, int row) {
+        Label lbl = new Label(label);
+        Label val = new Label(value);
+        val.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: " + color + ";");
+        pane.add(lbl, col, row);
+        pane.add(val, col + 1, row);
+    }
+
+    /**
+     * Handle export - Export all clubs data to CSV
      */
     @FXML
     public void handleExport() {
-        showInfo("Export", "CSV export will be implemented");
-        // FUTURE ENHANCEMENT: CSV Export - Framework placeholder, export feature pending
+        log.info("Exporting clubs data to CSV");
+
+        if (clubs.isEmpty()) {
+            showWarning("No clubs to export");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Clubs Data");
+        fileChooser.setInitialFileName("clubs_export_" +
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
+
+        File file = fileChooser.showSaveDialog(clubsTable.getScene().getWindow());
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                // Write BOM for Excel UTF-8 compatibility
+                writer.write('\ufeff');
+
+                // Header
+                writer.println("Club Name,Category,Advisor,Meeting Day,Meeting Time,Location,Current Enrollment,Max Capacity,Available Spots,Status,Description");
+
+                // Data rows
+                for (Club club : clubs) {
+                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%d,%d,%d,%s,%s",
+                            escapeCSV(club.getName()),
+                            escapeCSV(club.getCategory()),
+                            escapeCSV(club.getAdvisorName()),
+                            escapeCSV(club.getMeetingDay()),
+                            club.getMeetingTime() != null ? club.getMeetingTime().format(TIME_FORMATTER) : "",
+                            escapeCSV(club.getLocation()),
+                            club.getCurrentEnrollment() != null ? club.getCurrentEnrollment() : 0,
+                            club.getMaxCapacity() != null ? club.getMaxCapacity() : 0,
+                            club.getAvailableSpots() != null ? club.getAvailableSpots() : 0,
+                            club.getActive() ? "Active" : "Inactive",
+                            escapeCSV(club.getDescription())
+                    ));
+                }
+
+                log.info("Clubs data exported to {}", file.getAbsolutePath());
+                showSuccess("Exported " + clubs.size() + " clubs to:\n" + file.getName());
+
+            } catch (Exception e) {
+                log.error("Error exporting clubs data", e);
+                showError("Failed to export: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -703,5 +1022,16 @@ public class ClubsController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Escape CSV value
+     */
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 }

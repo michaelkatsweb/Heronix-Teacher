@@ -27,6 +27,9 @@ public class ClassRosterDTO {
     private Integer period;
     private String periodDisplay; // "Homeroom" or "Period 1", etc.
 
+    // Section information (for Heronix-SIS integration)
+    private Long sectionId;  // CourseSection ID for bulk attendance submission
+
     // Course information
     private Long courseId;
     private String courseName;
@@ -68,7 +71,7 @@ public class ClassRosterDTO {
         private String firstName;
         private String lastName;
         private String fullName;
-        private Integer gradeLevel;
+        private String gradeLevel;  // Grade level as String (e.g., "9", "10", "11", "12")
         private String email;
 
         // Special needs indicators

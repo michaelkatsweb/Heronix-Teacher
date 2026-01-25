@@ -20,9 +20,17 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.geometry.Insets;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 /**
  * Hall Pass Controller
@@ -355,12 +363,262 @@ public class HallPassController {
 
     @FXML
     private void viewHistory() {
-        log.info("Opening pass history");
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Pass History");
-        alert.setHeaderText("Hall Pass History");
-        alert.setContentText("View detailed pass history and reports.\n\n(Feature coming soon)");
-        alert.showAndWait();
+        log.info("Opening pass history dialog");
+
+        // Create dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Hall Pass History");
+        dialog.setHeaderText("View Pass History and Reports");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        dialog.setResizable(true);
+
+        // Create main layout
+        VBox mainContent = new VBox(15);
+        mainContent.setStyle("-fx-padding: 20;");
+        mainContent.setPrefWidth(700);
+        mainContent.setPrefHeight(500);
+
+        // Date range selection
+        GridPane datePane = new GridPane();
+        datePane.setHgap(10);
+        datePane.setVgap(10);
+
+        Label fromLabel = new Label("From:");
+        fromLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        DatePicker fromDatePicker = new DatePicker(LocalDate.now().minusDays(7));
+
+        Label toLabel = new Label("To:");
+        toLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        DatePicker toDatePicker = new DatePicker(LocalDate.now());
+
+        Button loadHistoryBtn = new Button("Load History");
+        loadHistoryBtn.getStyleClass().add("button-primary");
+
+        datePane.add(fromLabel, 0, 0);
+        datePane.add(fromDatePicker, 1, 0);
+        datePane.add(toLabel, 2, 0);
+        datePane.add(toDatePicker, 3, 0);
+        datePane.add(loadHistoryBtn, 4, 0);
+        GridPane.setMargin(loadHistoryBtn, new Insets(0, 0, 0, 10));
+
+        // Statistics panel
+        GridPane statsPane = new GridPane();
+        statsPane.setHgap(20);
+        statsPane.setVgap(5);
+        statsPane.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 15; -fx-background-radius: 5;");
+
+        Label statsTitle = new Label("Summary Statistics");
+        statsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+        statsPane.add(statsTitle, 0, 0, 4, 1);
+
+        Label totalLabel = new Label("Total Passes:");
+        Label totalValue = new Label("0");
+        totalValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+        Label avgDurLabel = new Label("Avg Duration:");
+        Label avgDurValue = new Label("0 min");
+        avgDurValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+        Label overdueLabel = new Label("Overdue:");
+        Label overdueValue = new Label("0");
+        overdueValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #f44336;");
+
+        Label topDestLabel = new Label("Top Destination:");
+        Label topDestValue = new Label("-");
+        topDestValue.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+        statsPane.add(totalLabel, 0, 1);
+        statsPane.add(totalValue, 1, 1);
+        statsPane.add(avgDurLabel, 2, 1);
+        statsPane.add(avgDurValue, 3, 1);
+        statsPane.add(overdueLabel, 0, 2);
+        statsPane.add(overdueValue, 1, 2);
+        statsPane.add(topDestLabel, 2, 2);
+        statsPane.add(topDestValue, 3, 2);
+
+        // History table
+        TableView<HallPassRow> historyTable = new TableView<>();
+        historyTable.setPrefHeight(250);
+        VBox.setVgrow(historyTable, Priority.ALWAYS);
+
+        TableColumn<HallPassRow, String> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(data -> new SimpleStringProperty(
+                data.getValue().getTimeOut().isEmpty() ? "" :
+                        currentDate.format(DateTimeFormatter.ofPattern("MM/dd"))));
+        dateCol.setPrefWidth(70);
+
+        TableColumn<HallPassRow, String> nameCol = new TableColumn<>("Student");
+        nameCol.setCellValueFactory(data -> data.getValue().studentNameProperty());
+        nameCol.setPrefWidth(150);
+
+        TableColumn<HallPassRow, String> destCol = new TableColumn<>("Destination");
+        destCol.setCellValueFactory(data -> data.getValue().destinationProperty());
+        destCol.setPrefWidth(100);
+
+        TableColumn<HallPassRow, String> outCol = new TableColumn<>("Time Out");
+        outCol.setCellValueFactory(data -> data.getValue().timeOutProperty());
+        outCol.setPrefWidth(80);
+
+        TableColumn<HallPassRow, String> inCol = new TableColumn<>("Time In");
+        inCol.setCellValueFactory(data -> data.getValue().timeInProperty());
+        inCol.setPrefWidth(80);
+
+        TableColumn<HallPassRow, String> durCol = new TableColumn<>("Duration");
+        durCol.setCellValueFactory(data -> data.getValue().durationProperty());
+        durCol.setPrefWidth(80);
+
+        TableColumn<HallPassRow, String> statusCol2 = new TableColumn<>("Status");
+        statusCol2.setCellValueFactory(data -> data.getValue().statusProperty());
+        statusCol2.setPrefWidth(90);
+
+        historyTable.getColumns().addAll(dateCol, nameCol, destCol, outCol, inCol, durCol, statusCol2);
+
+        // Export button
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+
+        Button exportCsvBtn = new Button("Export to CSV");
+        exportCsvBtn.setOnAction(e -> {
+            exportHistoryToCsv(historyTable.getItems(), fromDatePicker.getValue(), toDatePicker.getValue());
+        });
+
+        buttonBox.getChildren().add(exportCsvBtn);
+
+        // Load history action
+        loadHistoryBtn.setOnAction(e -> {
+            LocalDate fromDate = fromDatePicker.getValue();
+            LocalDate toDate = toDatePicker.getValue();
+
+            if (fromDate == null || toDate == null) {
+                showError("Invalid Dates", "Please select both start and end dates");
+                return;
+            }
+
+            if (fromDate.isAfter(toDate)) {
+                showError("Invalid Date Range", "Start date must be before end date");
+                return;
+            }
+
+            // Load passes for date range
+            List<HallPass> historyPasses = hallPassService.getPassesByDateRange(fromDate, toDate);
+            List<HallPassRow> historyRows = historyPasses.stream()
+                    .map(HallPassRow::fromHallPass)
+                    .collect(Collectors.toList());
+
+            historyTable.getItems().clear();
+            historyTable.getItems().addAll(historyRows);
+
+            // Update statistics
+            int totalPasses = historyRows.size();
+            totalValue.setText(String.valueOf(totalPasses));
+
+            long overdueCount = historyRows.stream()
+                    .filter(r -> r.getStatus().contains("OVERDUE"))
+                    .count();
+            overdueValue.setText(String.valueOf(overdueCount));
+
+            // Calculate average duration
+            int totalMinutes = 0;
+            int countWithDuration = 0;
+            for (HallPassRow row : historyRows) {
+                String dur = row.getDuration();
+                if (dur != null && !dur.equals("N/A") && dur.contains("min")) {
+                    try {
+                        int mins = Integer.parseInt(dur.replaceAll("[^0-9]", ""));
+                        totalMinutes += mins;
+                        countWithDuration++;
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+            int avgMins = countWithDuration > 0 ? totalMinutes / countWithDuration : 0;
+            avgDurValue.setText(avgMins + " min");
+
+            // Find top destination
+            Map<String, Long> destCounts = historyRows.stream()
+                    .collect(Collectors.groupingBy(HallPassRow::getDestination, Collectors.counting()));
+            String topDest = destCounts.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse("-");
+            topDestValue.setText(topDest);
+
+            statusLabel.setText("Loaded " + totalPasses + " passes from history");
+        });
+
+        // Assemble layout
+        mainContent.getChildren().addAll(datePane, statsPane, historyTable, buttonBox);
+        dialog.getDialogPane().setContent(mainContent);
+
+        // Load initial data (last 7 days)
+        loadHistoryBtn.fire();
+
+        dialog.showAndWait();
+    }
+
+    /**
+     * Export history data to CSV file
+     */
+    private void exportHistoryToCsv(List<HallPassRow> data, LocalDate fromDate, LocalDate toDate) {
+        if (data.isEmpty()) {
+            showError("No Data", "No history data to export");
+            return;
+        }
+
+        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+        fileChooser.setTitle("Export Hall Pass History");
+        fileChooser.setInitialFileName("hallpass_history_" +
+                fromDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "_" +
+                toDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
+        fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        java.io.File file = fileChooser.showSaveDialog(hallPassTable.getScene().getWindow());
+
+        if (file != null) {
+            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(file))) {
+                // BOM for Excel UTF-8 compatibility
+                writer.write('\ufeff');
+
+                // Header
+                writer.println("Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
+
+                // Data rows
+                for (HallPassRow row : data) {
+                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
+                            escapeCSV(row.getStudentName()),
+                            escapeCSV(row.getDestination()),
+                            row.getTimeOut(),
+                            row.getTimeIn(),
+                            row.getDuration(),
+                            row.getStatus(),
+                            escapeCSV(row.getNotes())));
+                }
+
+                log.info("Hall pass history exported to {}", file.getAbsolutePath());
+
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Export Successful");
+                successAlert.setHeaderText(null);
+                successAlert.setContentText("History exported to:\n" + file.getName() +
+                        "\n\nExported " + data.size() + " records.");
+                successAlert.showAndWait();
+
+            } catch (Exception e) {
+                log.error("Error exporting history to CSV", e);
+                showError("Export Failed", "Failed to export history: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Escape CSV value
+     */
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     @FXML

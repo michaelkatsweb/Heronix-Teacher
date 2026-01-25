@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -75,11 +76,24 @@ public class DeviceManagementController {
     private ObservableList<Map<String, Object>> activeDevices = FXCollections.observableArrayList();
     private ObservableList<Map<String, Object>> allDevices = FXCollections.observableArrayList();
 
+    // Filtered lists for search/filter functionality
+    private FilteredList<Map<String, Object>> filteredPendingDevices;
+    private FilteredList<Map<String, Object>> filteredActiveDevices;
+    private FilteredList<Map<String, Object>> filteredAllDevices;
+
+    // Current filter state
+    private String currentStatusFilter = "All";
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm");
 
     @FXML
     public void initialize() {
         log.info("Initializing Device Management Controller");
+
+        // Initialize filtered lists
+        filteredPendingDevices = new FilteredList<>(pendingDevices, p -> true);
+        filteredActiveDevices = new FilteredList<>(activeDevices, p -> true);
+        filteredAllDevices = new FilteredList<>(allDevices, p -> true);
 
         setupPendingDevicesTable();
         setupActiveDevicesTable();
@@ -145,7 +159,7 @@ public class DeviceManagementController {
             }
         });
 
-        pendingDevicesTable.setItems(pendingDevices);
+        pendingDevicesTable.setItems(filteredPendingDevices);
     }
 
     /**
@@ -194,7 +208,7 @@ public class DeviceManagementController {
             }
         });
 
-        activeDevicesTable.setItems(activeDevices);
+        activeDevicesTable.setItems(filteredActiveDevices);
     }
 
     /**
@@ -219,26 +233,80 @@ public class DeviceManagementController {
         allRegisteredAtCol.setCellValueFactory(data ->
                 new SimpleStringProperty(formatDate(getStringValue(data.getValue(), "registeredAt"))));
 
-        allDevicesTable.setItems(allDevices);
+        allDevicesTable.setItems(filteredAllDevices);
     }
 
     /**
      * Setup search filters
      */
     private void setupSearchFilters() {
-        // Pending search
+        // Pending search - filters by device ID, device name, device type, OS
         pendingSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            // TODO: Implement search filtering
+            filteredPendingDevices.setPredicate(device -> {
+                if (newVal == null || newVal.trim().isEmpty()) {
+                    return true;
+                }
+                String searchTerm = newVal.toLowerCase().trim();
+                return matchesSearchTerm(device, searchTerm);
+            });
         });
 
-        // Active search
+        // Active search - filters by device ID, device name, student ID, device type
         activeSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            // TODO: Implement search filtering
+            filteredActiveDevices.setPredicate(device -> {
+                if (newVal == null || newVal.trim().isEmpty()) {
+                    return true;
+                }
+                String searchTerm = newVal.toLowerCase().trim();
+                return matchesSearchTerm(device, searchTerm);
+            });
         });
 
-        // All search
+        // All search - filters by all fields, combined with status filter
         allSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            // TODO: Implement search filtering
+            applyAllDevicesFilter(newVal, currentStatusFilter);
+        });
+    }
+
+    /**
+     * Check if device matches search term
+     */
+    private boolean matchesSearchTerm(Map<String, Object> device, String searchTerm) {
+        String deviceId = getStringValue(device, "deviceId").toLowerCase();
+        String deviceName = getStringValue(device, "deviceName").toLowerCase();
+        String deviceType = getStringValue(device, "deviceType").toLowerCase();
+        String studentId = getStringValue(device, "studentId").toLowerCase();
+        String os = getStringValue(device, "operatingSystem").toLowerCase();
+        String status = getStringValue(device, "status").toLowerCase();
+
+        return deviceId.contains(searchTerm) ||
+               deviceName.contains(searchTerm) ||
+               deviceType.contains(searchTerm) ||
+               studentId.contains(searchTerm) ||
+               os.contains(searchTerm) ||
+               status.contains(searchTerm);
+    }
+
+    /**
+     * Apply combined filter (search + status) to all devices table
+     */
+    private void applyAllDevicesFilter(String searchText, String statusFilter) {
+        filteredAllDevices.setPredicate(device -> {
+            boolean matchesStatus = true;
+            boolean matchesSearch = true;
+
+            // Apply status filter
+            if (statusFilter != null && !statusFilter.equals("All")) {
+                String deviceStatus = getStringValue(device, "status").toUpperCase();
+                matchesStatus = deviceStatus.equals(statusFilter);
+            }
+
+            // Apply search filter
+            if (searchText != null && !searchText.trim().isEmpty()) {
+                matchesSearch = matchesSearchTerm(device, searchText.toLowerCase().trim());
+            }
+
+            return matchesStatus && matchesSearch;
         });
     }
 
@@ -252,7 +320,9 @@ public class DeviceManagementController {
         statusFilterCombo.setValue("All");
 
         statusFilterCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            // TODO: Implement status filtering
+            currentStatusFilter = newVal;
+            String currentSearchText = allSearchField.getText();
+            applyAllDevicesFilter(currentSearchText, newVal);
         });
     }
 

@@ -37,6 +37,8 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final StudentRepository studentRepository;
+    private final SessionManager sessionManager;
+    private final AdminApiClient adminApiClient;
 
     @Value("${eduproteacher.roster.mock.enabled:true}")
     private boolean rosterMockEnabled;
@@ -556,35 +558,98 @@ public class AttendanceService {
     }
 
     /**
-     * Get enrolled students for a specific period from EduScheduler Pro
+     * Get enrolled students for a specific period from Heronix-SIS
      *
-     * NOTE: This requires enrollment sync service to be implemented
+     * Queries the admin server API for the teacher's class roster for the given period.
+     * Falls back to local student repository if API is unavailable.
      *
      * @param period Period number
      * @return List of enrolled students
      */
+    @SuppressWarnings("unchecked")
     private List<Student> getEnrolledStudentsForPeriod(Integer period) {
-        // TODO: Implement enrollment service integration
-        // Example implementation:
-        // Long teacherId = getCurrentTeacherId();
-        // return enrollmentService.getStudentsForTeacherPeriod(teacherId, period);
+        Long teacherId = getCurrentTeacherId();
 
-        // For now, fall back to all active students with a warning
-        log.warn("Enrollment service not implemented - falling back to all active students for period {}", period);
-        log.warn("Set eduproteacher.roster.mock.enabled=true or implement EnrollmentService");
+        if (teacherId == null) {
+            log.warn("Cannot fetch roster - no teacher logged in, falling back to all active students");
+            return studentRepository.findByActiveTrue();
+        }
 
-        return studentRepository.findByActiveTrue();
+        try {
+            // Call the Heronix-SIS API to get roster for this period
+            java.util.Map<String, Object> rosterData = adminApiClient.getTeacherRosterForPeriod(teacherId, period);
+
+            if (rosterData == null || rosterData.get("roster") == null) {
+                log.debug("No class scheduled for period {} - returning empty list", period);
+                return new ArrayList<>();
+            }
+
+            // Extract the roster object
+            java.util.Map<String, Object> roster = (java.util.Map<String, Object>) rosterData.get("roster");
+            if (roster == null) {
+                log.debug("Roster is null for period {} - no class scheduled", period);
+                return new ArrayList<>();
+            }
+
+            // Extract enrolled students from roster
+            List<java.util.Map<String, Object>> enrolledStudents =
+                    (List<java.util.Map<String, Object>>) roster.get("students");
+
+            if (enrolledStudents == null || enrolledStudents.isEmpty()) {
+                log.debug("No students enrolled for period {}", period);
+                return new ArrayList<>();
+            }
+
+            // Convert API student data to local Student entities
+            // Try to find matching students in local repository, or create temporary objects
+            List<Student> students = new ArrayList<>();
+            for (java.util.Map<String, Object> studentData : enrolledStudents) {
+                Long studentId = studentData.get("id") != null ?
+                        ((Number) studentData.get("id")).longValue() : null;
+
+                if (studentId != null) {
+                    // Try to find in local repository first
+                    Optional<Student> localStudent = studentRepository.findById(studentId);
+                    if (localStudent.isPresent()) {
+                        students.add(localStudent.get());
+                    } else {
+                        // Create a transient student object from API data
+                        Student apiStudent = Student.builder()
+                                .id(studentId)
+                                .firstName((String) studentData.get("firstName"))
+                                .lastName((String) studentData.get("lastName"))
+                                .studentId((String) studentData.get("studentNumber"))
+                                .gradeLevel(studentData.get("gradeLevel") != null ?
+                                        ((Number) studentData.get("gradeLevel")).intValue() : null)
+                                .active(true)
+                                .build();
+                        students.add(apiStudent);
+                    }
+                }
+            }
+
+            log.debug("Retrieved {} enrolled students for period {} from Heronix-SIS API",
+                    students.size(), period);
+            return students;
+
+        } catch (Exception e) {
+            log.error("Failed to fetch roster from API for period {}: {}", period, e.getMessage());
+            log.warn("Falling back to all active students from local repository");
+            return studentRepository.findByActiveTrue();
+        }
     }
 
     /**
      * Get current teacher ID from session
      * Helper method for enrollment integration
      *
-     * @return Teacher ID
+     * @return Teacher ID, or null if not logged in
      */
     private Long getCurrentTeacherId() {
-        // TODO: Implement session management to get current teacher
-        // return sessionManager.getCurrentTeacher().getId();
-        return 1L; // Placeholder
+        Long teacherId = sessionManager.getCurrentTeacherId();
+        if (teacherId == null) {
+            log.warn("No teacher logged in - session manager returned null");
+        }
+        return teacherId;
     }
 }

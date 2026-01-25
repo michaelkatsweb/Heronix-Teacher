@@ -20,13 +20,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import javafx.stage.FileChooser;
 
 /**
  * Period-Based Attendance Controller
@@ -67,6 +73,10 @@ public class AttendanceController {
     private final Map<Integer, ObservableList<AttendanceRow>> periodData = new HashMap<>();
     private final Map<Integer, Map<String, Label>> periodStatsLabels = new HashMap<>();
     private final Map<Integer, ClassRosterDTO> periodRosters = new HashMap<>();
+
+    // Bell schedule data (loaded from server)
+    private Map<String, Object> bellScheduleData = new HashMap<>();
+    private Map<Integer, Map<String, Object>> periodTimings = new HashMap<>();  // period -> {startTime, endTime}
 
     @FXML
     public void initialize() {
@@ -322,10 +332,13 @@ public class AttendanceController {
 
     /**
      * Load attendance data for all periods
-     * NEW: Syncs rosters from EduScheduler-Pro server
+     * NEW: Syncs rosters from Heronix-SIS server and loads bell schedule
      */
     private void loadAllPeriodsData() {
         log.info("Loading period rosters from server...");
+
+        // Load bell schedule first
+        loadBellSchedule();
 
         // Get current teacher's employee ID from session
         String employeeId = sessionManager.getCurrentEmployeeId();
@@ -337,13 +350,26 @@ public class AttendanceController {
         }
 
         try {
-            // Sync all rosters from server
-            java.util.Map<Integer, ClassRosterDTO> rosters = adminApiClient.getAllRosters(employeeId);
-            periodRosters.clear();
-            periodRosters.putAll(rosters);
+            // Try new Heronix-SIS API first (uses teacherId)
+            Long teacherId = adminApiClient.getTeacherId();
 
-            log.info("Synced {} period rosters from server", rosters.size());
-            statusLabel.setText("Synced " + rosters.size() + " class rosters from server");
+            if (teacherId != null) {
+                // Use new Teacher Attendance API
+                java.util.Map<String, Object> response = adminApiClient.getTeacherRosters(teacherId);
+
+                if (Boolean.TRUE.equals(response.get("success"))) {
+                    periodRosters.clear();
+                    convertNewRostersFormat(response);
+                    log.info("Synced rosters from Heronix-SIS API for teacher ID {}", teacherId);
+                    statusLabel.setText("Synced rosters from Heronix-SIS");
+                } else {
+                    // Fall back to legacy API
+                    loadRostersLegacy(employeeId);
+                }
+            } else {
+                // No teacherId, use legacy API
+                loadRostersLegacy(employeeId);
+            }
 
             // Load each period's data
             for (int period = 0; period <= 7; period++) {
@@ -362,6 +388,95 @@ public class AttendanceController {
             }
             updateSummary();
         }
+    }
+
+    /**
+     * Load bell schedule from server
+     */
+    private void loadBellSchedule() {
+        try {
+            bellScheduleData = adminApiClient.getBellSchedule();
+
+            if (Boolean.TRUE.equals(bellScheduleData.get("success"))) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> periods = (List<Map<String, Object>>) bellScheduleData.get("periods");
+
+                if (periods != null) {
+                    periodTimings.clear();
+                    for (Map<String, Object> period : periods) {
+                        Integer periodNum = (Integer) period.get("periodNumber");
+                        periodTimings.put(periodNum, period);
+                    }
+                    log.info("Loaded bell schedule with {} periods", periodTimings.size());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not load bell schedule: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Load rosters using legacy API (employeeId-based)
+     */
+    private void loadRostersLegacy(String employeeId) throws Exception {
+        java.util.Map<Integer, ClassRosterDTO> rosters = adminApiClient.getAllRosters(employeeId);
+        periodRosters.clear();
+        periodRosters.putAll(rosters);
+        log.info("Synced {} period rosters from legacy API", rosters.size());
+        statusLabel.setText("Synced " + rosters.size() + " class rosters from server");
+    }
+
+    /**
+     * Convert new Heronix-SIS roster format to ClassRosterDTO format
+     */
+    @SuppressWarnings("unchecked")
+    private void convertNewRostersFormat(Map<String, Object> response) {
+        List<Map<String, Object>> rosters = (List<Map<String, Object>>) response.get("rosters");
+
+        if (rosters == null) return;
+
+        for (Map<String, Object> roster : rosters) {
+            Integer period = (Integer) roster.get("period");
+            if (period == null) continue;
+
+            // Convert to ClassRosterDTO
+            ClassRosterDTO dto = new ClassRosterDTO();
+            dto.setCourseCode((String) roster.get("courseCode"));
+            dto.setCourseName((String) roster.get("courseName"));
+            dto.setSectionId(getLongValue(roster, "sectionId"));
+            dto.setPeriod(period);
+            dto.setRoomNumber((String) roster.get("roomNumber"));
+
+            // Convert students
+            List<Map<String, Object>> students = (List<Map<String, Object>>) roster.get("students");
+            if (students != null) {
+                List<ClassRosterDTO.RosterStudentDTO> studentDtos = new java.util.ArrayList<>();
+                for (Map<String, Object> student : students) {
+                    ClassRosterDTO.RosterStudentDTO studentDto = new ClassRosterDTO.RosterStudentDTO();
+                    studentDto.setStudentId(getLongValue(student, "id"));
+                    studentDto.setStudentNumber((String) student.get("studentId"));
+                    studentDto.setFirstName((String) student.get("firstName"));
+                    studentDto.setLastName((String) student.get("lastName"));
+                    studentDto.setGradeLevel((String) student.get("gradeLevel"));
+                    studentDto.setEmail((String) student.get("email"));
+                    studentDtos.add(studentDto);
+                }
+                dto.setStudents(studentDtos);
+            }
+
+            periodRosters.put(period, dto);
+        }
+    }
+
+    /**
+     * Helper to get Long value from map (handles Integer/Long conversion)
+     */
+    private Long getLongValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null) return null;
+        if (value instanceof Long) return (Long) value;
+        if (value instanceof Integer) return ((Integer) value).longValue();
+        return null;
     }
 
     /**
@@ -439,7 +554,16 @@ public class AttendanceController {
             student.setFirstName(rosterStudent.getFirstName());
             student.setLastName(rosterStudent.getLastName());
             student.setEmail(rosterStudent.getEmail());
-            student.setGradeLevel(rosterStudent.getGradeLevel());
+
+            // Convert gradeLevel from String to Integer
+            String gradeStr = rosterStudent.getGradeLevel();
+            if (gradeStr != null && !gradeStr.isEmpty()) {
+                try {
+                    student.setGradeLevel(Integer.parseInt(gradeStr));
+                } catch (NumberFormatException e) {
+                    log.warn("Could not parse grade level: {}", gradeStr);
+                }
+            }
 
             students.add(student);
         }
@@ -580,22 +704,86 @@ public class AttendanceController {
     }
 
     /**
-     * Export attendance for all periods
+     * Export attendance for all periods to CSV
      */
     @FXML
     private void exportAttendance() {
         log.info("Exporting attendance for all periods");
         statusLabel.setText("Exporting attendance...");
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Export Attendance");
-        alert.setHeaderText("Export All Periods");
-        alert.setContentText("Attendance data for all periods exported successfully!\n\n" +
-                "Location: ./exports/attendance_all_periods_" + currentDate + ".csv\n\n" +
-                "(Export functionality will be fully implemented in next release)");
-        alert.showAndWait();
+        // Show file chooser
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Attendance");
+        fileChooser.setInitialFileName("attendance_" + currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) +
+                "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".csv");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
 
-        statusLabel.setText("Export complete");
+        File file = fileChooser.showSaveDialog(periodTabPane.getScene().getWindow());
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                // Write BOM for Excel UTF-8 compatibility
+                writer.write('\ufeff');
+
+                // Header
+                writer.println("Date,Period,Student Name,Student ID,Status,Arrival Time,Notes");
+
+                int totalRecords = 0;
+
+                // Export data from all periods
+                for (int period = 0; period <= 7; period++) {
+                    ObservableList<AttendanceRow> data = periodData.get(period);
+                    if (data != null && !data.isEmpty()) {
+                        String periodName = period == 0 ? "Homeroom" : "Period " + period;
+
+                        for (AttendanceRow row : data) {
+                            writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
+                                    currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                                    periodName,
+                                    escapeCSV(row.getStudentName()),
+                                    escapeCSV(row.getStudentId()),
+                                    row.getStatus(),
+                                    row.getArrivalTime() != null ? row.getArrivalTime() : "",
+                                    escapeCSV(row.getNotes())
+                            ));
+                            totalRecords++;
+                        }
+                    }
+                }
+
+                log.info("Attendance exported to {} - {} records", file.getAbsolutePath(), totalRecords);
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Export Successful");
+                alert.setHeaderText("Attendance Exported");
+                alert.setContentText(String.format("Exported %d attendance records to:\n%s",
+                        totalRecords, file.getName()));
+                alert.showAndWait();
+
+                statusLabel.setText("Export complete - " + totalRecords + " records");
+
+            } catch (Exception e) {
+                log.error("Error exporting attendance", e);
+                showError("Export Failed", "Failed to export attendance: " + e.getMessage());
+                statusLabel.setText("Export failed");
+            }
+        } else {
+            statusLabel.setText("Export cancelled");
+        }
+    }
+
+    /**
+     * Escape CSV value to handle commas, quotes, and newlines
+     */
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     /**

@@ -14,12 +14,28 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
+import javafx.util.StringConverter;
 
 /**
  * Class Wallet Controller
@@ -364,8 +380,143 @@ public class ClassWalletController {
     @FXML
     public void handleNewTransaction() {
         log.info("Opening new transaction dialog");
-        showInfo("Transaction Dialog", "New transaction dialog will be implemented");
-        // FUTURE ENHANCEMENT: Transaction Dialog - Framework placeholder, dialog UI pending
+
+        // Create dialog
+        Dialog<ClassWallet> dialog = new Dialog<>();
+        dialog.setTitle("New Transaction");
+        dialog.setHeaderText("Create a new wallet transaction");
+
+        // Add buttons
+        ButtonType createButtonType = new ButtonType("Create", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
+
+        // Create form
+        GridPane form = new GridPane();
+        form.setHgap(10);
+        form.setVgap(15);
+        form.setPadding(new Insets(20));
+
+        // Student selector
+        Label studentLabel = new Label("Student:");
+        studentLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        ComboBox<Student> studentCombo = new ComboBox<>();
+        studentCombo.setItems(FXCollections.observableArrayList(allStudents));
+        studentCombo.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Student student) {
+                return student != null ? student.getFullName() + " (" + student.getStudentId() + ")" : "";
+            }
+            @Override
+            public Student fromString(String string) { return null; }
+        });
+        studentCombo.setPrefWidth(300);
+
+        // Transaction type
+        Label typeLabel = new Label("Type:");
+        typeLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        ComboBox<String> typeCombo = new ComboBox<>();
+        typeCombo.setItems(FXCollections.observableArrayList("REWARD", "FINE", "PURCHASE", "REFUND", "ADJUSTMENT"));
+        typeCombo.setValue("REWARD");
+        typeCombo.setPrefWidth(300);
+
+        // Category
+        Label categoryLabel = new Label("Category:");
+        categoryLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        ComboBox<String> categoryCombo = new ComboBox<>();
+        categoryCombo.setItems(FXCollections.observableArrayList(
+                "Participation", "Homework", "Behavior", "Achievement", "Attendance",
+                "Store Purchase", "Penalty", "Bonus", "Other"));
+        categoryCombo.setValue("Participation");
+        categoryCombo.setEditable(true);
+        categoryCombo.setPrefWidth(300);
+
+        // Amount
+        Label amountLabel = new Label("Amount:");
+        amountLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount (e.g., 10.00)");
+        amountField.setPrefWidth(300);
+
+        // Description
+        Label descLabel = new Label("Description:");
+        descLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        TextArea descArea = new TextArea();
+        descArea.setPromptText("Enter description (optional)");
+        descArea.setPrefRowCount(2);
+        descArea.setPrefWidth(300);
+
+        // Add to form
+        form.add(studentLabel, 0, 0);
+        form.add(studentCombo, 1, 0);
+        form.add(typeLabel, 0, 1);
+        form.add(typeCombo, 1, 1);
+        form.add(categoryLabel, 0, 2);
+        form.add(categoryCombo, 1, 2);
+        form.add(amountLabel, 0, 3);
+        form.add(amountField, 1, 3);
+        form.add(descLabel, 0, 4);
+        form.add(descArea, 1, 4);
+
+        dialog.getDialogPane().setContent(form);
+
+        // Enable/disable create button based on validation
+        javafx.scene.Node createButton = dialog.getDialogPane().lookupButton(createButtonType);
+        createButton.setDisable(true);
+
+        // Validation listener
+        Runnable validate = () -> {
+            boolean valid = studentCombo.getValue() != null &&
+                    typeCombo.getValue() != null &&
+                    !amountField.getText().trim().isEmpty();
+            if (valid) {
+                try {
+                    new BigDecimal(amountField.getText().trim());
+                } catch (NumberFormatException e) {
+                    valid = false;
+                }
+            }
+            createButton.setDisable(!valid);
+        };
+
+        studentCombo.valueProperty().addListener((obs, o, n) -> validate.run());
+        typeCombo.valueProperty().addListener((obs, o, n) -> validate.run());
+        amountField.textProperty().addListener((obs, o, n) -> validate.run());
+
+        // Convert result
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == createButtonType) {
+                try {
+                    Student student = studentCombo.getValue();
+                    String type = typeCombo.getValue();
+                    String category = categoryCombo.getValue();
+                    BigDecimal amount = new BigDecimal(amountField.getText().trim());
+                    String description = descArea.getText();
+
+                    // Adjust amount sign based on type
+                    if (type.equals("FINE") || type.equals("PURCHASE")) {
+                        amount = amount.abs().negate();
+                    } else {
+                        amount = amount.abs();
+                    }
+
+                    return walletService.createTransaction(student.getId(), type, category, amount, description);
+                } catch (Exception e) {
+                    log.error("Error creating transaction", e);
+                    showError("Failed to create transaction: " + e.getMessage());
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        Optional<ClassWallet> result = dialog.showAndWait();
+        result.ifPresent(transaction -> {
+            log.info("Transaction created: {} {} for {}", transaction.getTransactionType(),
+                    transaction.getAmount(), transaction.getStudent().getFullName());
+            loadData();
+            updateStatistics();
+            showSuccess("Transaction created successfully!");
+        });
     }
 
     /**
@@ -391,8 +542,122 @@ public class ClassWalletController {
     @FXML
     public void handleViewReports() {
         log.info("Viewing wallet reports");
-        showInfo("Reports", "Wallet reports will be implemented");
-        // FUTURE ENHANCEMENT: Reports Dialog - Framework placeholder, dialog UI pending
+
+        // Create dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Wallet Reports");
+        dialog.setHeaderText("Class Wallet Statistics & Reports");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        dialog.setResizable(true);
+
+        // Main layout
+        VBox mainContent = new VBox(15);
+        mainContent.setPadding(new Insets(20));
+        mainContent.setPrefWidth(600);
+        mainContent.setPrefHeight(450);
+
+        // Summary statistics panel
+        GridPane statsPane = new GridPane();
+        statsPane.setHgap(30);
+        statsPane.setVgap(10);
+        statsPane.setStyle("-fx-background-color: #e3f2fd; -fx-padding: 15; -fx-background-radius: 5;");
+
+        Label statsTitle = new Label("Summary Statistics");
+        statsTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+        statsPane.add(statsTitle, 0, 0, 4, 1);
+
+        try {
+            Map<String, Object> stats = walletService.getClassStatistics();
+
+            BigDecimal totalAwarded = (BigDecimal) stats.get("totalAwarded");
+            BigDecimal totalSpent = (BigDecimal) stats.get("totalSpent");
+            Long activeStudents = (Long) stats.get("activeStudents");
+            BigDecimal netBalance = totalAwarded.subtract(totalSpent);
+
+            addStatLabel(statsPane, "Total Awarded:", String.format("%.2f pts", totalAwarded), "#4caf50", 0, 1);
+            addStatLabel(statsPane, "Total Spent:", String.format("%.2f pts", totalSpent), "#f44336", 2, 1);
+            addStatLabel(statsPane, "Net Balance:", String.format("%.2f pts", netBalance), "#2196f3", 0, 2);
+            addStatLabel(statsPane, "Active Students:", String.valueOf(activeStudents), "#9c27b0", 2, 2);
+
+        } catch (Exception e) {
+            log.error("Error loading statistics", e);
+            statsPane.add(new Label("Error loading statistics"), 0, 1);
+        }
+
+        // Transaction breakdown by type
+        VBox typeBreakdown = new VBox(10);
+        Label typeTitle = new Label("Transactions by Type");
+        typeTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        GridPane typeGrid = new GridPane();
+        typeGrid.setHgap(20);
+        typeGrid.setVgap(5);
+        typeGrid.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 10; -fx-background-radius: 5;");
+
+        Map<String, Long> typeCounts = transactions.stream()
+                .collect(Collectors.groupingBy(ClassWallet::getTransactionType, Collectors.counting()));
+
+        int row = 0;
+        for (Map.Entry<String, Long> entry : typeCounts.entrySet()) {
+            Label typeLabel = new Label(entry.getKey() + ":");
+            Label countLabel = new Label(entry.getValue() + " transactions");
+            countLabel.setStyle("-fx-font-weight: bold;");
+            typeGrid.add(typeLabel, 0, row);
+            typeGrid.add(countLabel, 1, row);
+            row++;
+        }
+
+        typeBreakdown.getChildren().addAll(typeTitle, typeGrid);
+
+        // Category breakdown
+        VBox categoryBreakdown = new VBox(10);
+        Label categoryTitle = new Label("Transactions by Category");
+        categoryTitle.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        GridPane categoryGrid = new GridPane();
+        categoryGrid.setHgap(20);
+        categoryGrid.setVgap(5);
+        categoryGrid.setStyle("-fx-background-color: #f5f5f5; -fx-padding: 10; -fx-background-radius: 5;");
+
+        Map<String, Long> categoryCounts = transactions.stream()
+                .filter(t -> t.getCategory() != null)
+                .collect(Collectors.groupingBy(ClassWallet::getCategory, Collectors.counting()));
+
+        row = 0;
+        for (Map.Entry<String, Long> entry : categoryCounts.entrySet()) {
+            if (row >= 8) break; // Limit to top 8 categories
+            Label catLabel = new Label(entry.getKey() + ":");
+            Label countLabel = new Label(entry.getValue() + " transactions");
+            countLabel.setStyle("-fx-font-weight: bold;");
+            categoryGrid.add(catLabel, 0, row);
+            categoryGrid.add(countLabel, 1, row);
+            row++;
+        }
+
+        categoryBreakdown.getChildren().addAll(categoryTitle, categoryGrid);
+
+        // Export button
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        Button exportReportBtn = new Button("Export Report to CSV");
+        exportReportBtn.setOnAction(e -> handleExport());
+        buttonBox.getChildren().add(exportReportBtn);
+
+        mainContent.getChildren().addAll(statsPane, typeBreakdown, categoryBreakdown, buttonBox);
+        dialog.getDialogPane().setContent(mainContent);
+
+        dialog.showAndWait();
+    }
+
+    /**
+     * Helper to add stat label to grid
+     */
+    private void addStatLabel(GridPane pane, String label, String value, String color, int col, int row) {
+        Label lbl = new Label(label);
+        Label val = new Label(value);
+        val.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: " + color + ";");
+        pane.add(lbl, col, row);
+        pane.add(val, col + 1, row);
     }
 
     /**
@@ -420,13 +685,71 @@ public class ClassWalletController {
     }
 
     /**
-     * Handle export button
+     * Handle export button - Export transactions to CSV
      */
     @FXML
     public void handleExport() {
-        log.info("Exporting wallet data");
-        showInfo("Export", "CSV export will be implemented");
-        // FUTURE ENHANCEMENT: CSV Export - Framework placeholder, export feature pending
+        log.info("Exporting wallet data to CSV");
+
+        if (transactions.isEmpty()) {
+            showError("No transactions to export");
+            return;
+        }
+
+        // Show file chooser
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Wallet Transactions");
+        fileChooser.setInitialFileName("class_wallet_export_" +
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
+
+        File file = fileChooser.showSaveDialog(transactionsTable.getScene().getWindow());
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                // Write BOM for Excel UTF-8 compatibility
+                writer.write('\ufeff');
+
+                // Header
+                writer.println("Date,Student Name,Student ID,Type,Category,Description,Amount,Balance After,Status");
+
+                // Data rows
+                for (ClassWallet t : transactions) {
+                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%.2f,%.2f,%s",
+                            t.getTransactionDate() != null ? t.getTransactionDate().format(DATE_FORMATTER) : "",
+                            escapeCSV(t.getStudent() != null ? t.getStudent().getFullName() : "Unknown"),
+                            escapeCSV(t.getStudent() != null ? t.getStudent().getStudentId() : ""),
+                            t.getTransactionType(),
+                            escapeCSV(t.getCategory()),
+                            escapeCSV(t.getDescription()),
+                            t.getAmount(),
+                            t.getBalanceAfter() != null ? t.getBalanceAfter() : BigDecimal.ZERO,
+                            t.getApproved() ? "Approved" : "Pending"
+                    ));
+                }
+
+                log.info("Wallet transactions exported to {}", file.getAbsolutePath());
+                showSuccess("Exported " + transactions.size() + " transactions to:\n" + file.getName());
+
+            } catch (Exception e) {
+                log.error("Error exporting wallet data", e);
+                showError("Failed to export: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Escape CSV value
+     */
+    private String escapeCSV(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     /**

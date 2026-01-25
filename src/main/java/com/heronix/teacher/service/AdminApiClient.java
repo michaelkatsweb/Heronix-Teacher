@@ -26,6 +26,8 @@ public class AdminApiClient {
     private final ObjectMapper objectMapper;
     private final String baseUrl;
     private String authToken;
+    private Long teacherId;  // Stored from authentication response
+    private String teacherName;  // Stored from authentication response
 
     public AdminApiClient(
             ObjectMapper objectMapper,
@@ -63,7 +65,9 @@ public class AdminApiClient {
                 AuthResponse authResponse = objectMapper.readValue(
                         response.body(), AuthResponse.class);
                 this.authToken = authResponse.getToken();
-                log.info("Authentication successful for teacher: {}", employeeId);
+                this.teacherId = authResponse.getTeacherId();
+                this.teacherName = authResponse.getTeacherName();
+                log.info("Authentication successful for teacher: {} (ID: {})", employeeId, teacherId);
                 return true;
             } else {
                 log.error("Authentication failed: {}", response.statusCode());
@@ -253,7 +257,7 @@ public class AdminApiClient {
     // ========================================================================
 
     /**
-     * Submit attendance records (batch operation)
+     * Submit attendance records (batch operation) - Legacy endpoint
      */
     public void submitAttendance(List<AttendanceDTO> attendanceRecords) throws Exception {
         String requestBody = objectMapper.writeValueAsString(attendanceRecords);
@@ -277,6 +281,54 @@ public class AdminApiClient {
     }
 
     /**
+     * Submit bulk attendance for a class section (New Heronix-SIS API)
+     * @param sectionId The course section ID
+     * @param date The attendance date (yyyy-MM-dd format)
+     * @param periodNumber The period number
+     * @param recordedBy Username of the teacher recording
+     * @param records List of student attendance records
+     * @return Response map with success status and details
+     */
+    public java.util.Map<String, Object> submitBulkAttendance(
+            Long sectionId,
+            String date,
+            Integer periodNumber,
+            String recordedBy,
+            List<java.util.Map<String, Object>> records) throws Exception {
+
+        java.util.Map<String, Object> requestData = new java.util.HashMap<>();
+        requestData.put("sectionId", sectionId);
+        requestData.put("date", date);
+        requestData.put("periodNumber", periodNumber);
+        requestData.put("recordedBy", recordedBy);
+        requestData.put("records", records);
+
+        String requestBody = objectMapper.writeValueAsString(requestData);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/teacher/attendance/bulk"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + authToken)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .timeout(Duration.ofSeconds(30))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        java.util.Map<String, Object> result = objectMapper.readValue(response.body(),
+                new TypeReference<java.util.Map<String, Object>>() {});
+
+        if (response.statusCode() == 200) {
+            log.info("Successfully submitted bulk attendance for section {}", sectionId);
+        } else {
+            log.error("Failed to submit bulk attendance: {}", result.get("message"));
+        }
+
+        return result;
+    }
+
+    /**
      * Get attendance for specific student
      */
     public List<AttendanceDTO> getStudentAttendance(Long studentId) throws Exception {
@@ -289,6 +341,63 @@ public class AdminApiClient {
                     new TypeReference<List<AttendanceDTO>>() {});
         } else {
             throw new Exception("Failed to fetch attendance: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get attendance for a class section on a specific date (New Heronix-SIS API)
+     * @param sectionId The course section ID
+     * @param date The date in yyyy-MM-dd format
+     * @return Map containing attendance records and summary
+     */
+    public java.util.Map<String, Object> getClassAttendance(Long sectionId, String date) throws Exception {
+        HttpRequest request = buildGetRequest("/api/teacher/attendance/class/" + sectionId + "/date/" + date);
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(),
+                    new TypeReference<java.util.Map<String, Object>>() {});
+        } else if (response.statusCode() == 404) {
+            log.warn("No attendance found for section {} on {}", sectionId, date);
+            return new java.util.HashMap<>();
+        } else {
+            throw new Exception("Failed to fetch class attendance: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get the active bell schedule with period times (New Heronix-SIS API)
+     * @return Map containing schedule name, type, and period definitions
+     */
+    public java.util.Map<String, Object> getBellSchedule() throws Exception {
+        HttpRequest request = buildGetRequest("/api/teacher/attendance/bell-schedule");
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(),
+                    new TypeReference<java.util.Map<String, Object>>() {});
+        } else {
+            log.warn("Failed to fetch bell schedule: {}", response.statusCode());
+            return new java.util.HashMap<>();
+        }
+    }
+
+    /**
+     * Get the current period based on server time (New Heronix-SIS API)
+     * @return Map containing current period info or null if between periods
+     */
+    public java.util.Map<String, Object> getCurrentPeriod() throws Exception {
+        HttpRequest request = buildGetRequest("/api/teacher/attendance/current-period");
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(),
+                    new TypeReference<java.util.Map<String, Object>>() {});
+        } else {
+            return new java.util.HashMap<>();
         }
     }
 
@@ -381,7 +490,7 @@ public class AdminApiClient {
     }
 
     /**
-     * Get all class rosters for all periods (0-7)
+     * Get all class rosters for all periods (0-7) - Legacy method using employeeId
      */
     public java.util.Map<Integer, ClassRosterDTO> getAllRosters(String employeeId) throws Exception {
         HttpRequest request = buildGetRequest("/api/teacher/rosters?employeeId=" + employeeId);
@@ -396,6 +505,57 @@ public class AdminApiClient {
             return new java.util.HashMap<>();
         } else {
             throw new Exception("Failed to fetch rosters: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get all class rosters for a teacher by teacher ID (New Heronix-SIS API)
+     * This is the preferred method for the new attendance system
+     * @param teacherId The teacher's database ID (Long)
+     * @return Map containing rosters array with section info and enrolled students
+     */
+    public java.util.Map<String, Object> getTeacherRosters(Long teacherId) throws Exception {
+        HttpRequest request = buildGetRequest("/api/teacher/attendance/roster/" + teacherId);
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(),
+                    new TypeReference<java.util.Map<String, Object>>() {});
+        } else if (response.statusCode() == 404) {
+            log.warn("No rosters found for teacher ID: {}", teacherId);
+            java.util.Map<String, Object> empty = new java.util.HashMap<>();
+            empty.put("success", false);
+            empty.put("message", "Teacher not found");
+            return empty;
+        } else {
+            throw new Exception("Failed to fetch teacher rosters: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get roster for a specific teacher and period (New Heronix-SIS API)
+     * @param teacherId The teacher's database ID
+     * @param period The period number (1-7)
+     * @return Map containing roster data with students
+     */
+    public java.util.Map<String, Object> getTeacherRosterForPeriod(Long teacherId, Integer period) throws Exception {
+        HttpRequest request = buildGetRequest("/api/teacher/attendance/roster/" + teacherId + "/period/" + period);
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            return objectMapper.readValue(response.body(),
+                    new TypeReference<java.util.Map<String, Object>>() {});
+        } else if (response.statusCode() == 404) {
+            log.warn("No roster found for teacher {} period {}", teacherId, period);
+            java.util.Map<String, Object> empty = new java.util.HashMap<>();
+            empty.put("success", true);
+            empty.put("roster", null);
+            empty.put("message", "No class scheduled for this period");
+            return empty;
+        } else {
+            throw new Exception("Failed to fetch roster: " + response.statusCode());
         }
     }
 
@@ -471,6 +631,29 @@ public class AdminApiClient {
         return authToken != null && !authToken.isEmpty();
     }
 
+    /**
+     * Get the authenticated teacher's database ID
+     * @return Teacher ID from authentication, or null if not authenticated
+     */
+    public Long getTeacherId() {
+        return teacherId;
+    }
+
+    /**
+     * Set the teacher ID manually (for testing or offline mode)
+     */
+    public void setTeacherId(Long teacherId) {
+        this.teacherId = teacherId;
+    }
+
+    /**
+     * Get the authenticated teacher's name
+     * @return Teacher name from authentication, or null if not authenticated
+     */
+    public String getTeacherName() {
+        return teacherName;
+    }
+
     // ========================================================================
     // INNER CLASSES FOR REQUESTS/RESPONSES
     // ========================================================================
@@ -492,6 +675,14 @@ public class AdminApiClient {
 
         public String getToken() {
             return token;
+        }
+
+        public Long getTeacherId() {
+            return teacherId;
+        }
+
+        public String getTeacherName() {
+            return teacherName;
         }
     }
 

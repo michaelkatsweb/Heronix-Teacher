@@ -124,6 +124,34 @@ public class ClassWalletService {
     }
 
     /**
+     * Create a generic transaction (used by UI dialog)
+     */
+    @Transactional
+    public ClassWallet createTransaction(Long studentId, String type, String category, BigDecimal amount, String description) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        BigDecimal currentBalance = getCurrentBalance(studentId);
+        BigDecimal newBalance = currentBalance.add(amount);
+
+        ClassWallet transaction = ClassWallet.builder()
+                .student(student)
+                .transactionType(type)
+                .amount(amount)
+                .balanceAfter(newBalance)
+                .category(category)
+                .description(description)
+                .transactionDate(LocalDate.now())
+                .approved(true)
+                .syncStatus("pending")
+                .build();
+
+        ClassWallet saved = walletRepository.save(transaction);
+        log.info("Created {} transaction for student {}: {} ({})", type, student.getFullName(), amount, description);
+        return saved;
+    }
+
+    /**
      * Create a manual adjustment
      */
     @Transactional

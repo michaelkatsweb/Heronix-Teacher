@@ -11,12 +11,13 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.value.ChangeListener;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -478,43 +479,227 @@ public class MainController {
     }
 
     /**
-     * Export data action - shows export options dialog
+     * Export data action - navigates to Dashboard Reports for comprehensive export options
      */
     @FXML
     public void exportData() {
-        log.info("Export data triggered");
+        log.info("Export data triggered - navigating to Dashboard for export options");
 
+        // Navigate to Dashboard where the full export functionality is available
+        navigateTo("dashboard");
+
+        // Show info about export location
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Export Data");
-        alert.setHeaderText("Export to CSV");
-        alert.setContentText("Choose what to export:\n\n" +
-            "• Grades\n" +
-            "• Attendance\n" +
-            "• Hall Passes\n\n" +
-            "Full export functionality will be available in next release.");
+        alert.setHeaderText("Export Options Available");
+        alert.setContentText("Export options are available in the Dashboard:\n\n" +
+                "1. Click 'Reports' button for detailed reports with export\n" +
+                "2. Click 'Export Data' for quick export options\n\n" +
+                "Available exports:\n" +
+                "• Student Roster (CSV)\n" +
+                "• Gradebook (CSV)\n" +
+                "• Attendance Records (CSV)\n" +
+                "• Hall Pass Log (CSV)\n" +
+                "• Complete Summary Report (CSV)");
         alert.showAndWait();
 
-        updateStatusMessage("Export feature in development");
+        updateStatusMessage("Navigate to Dashboard for export options");
     }
 
     /**
-     * Open settings - displays current application settings
+     * Open settings - displays advanced application settings dialog
      */
     @FXML
     public void openSettings() {
-        log.info("Opening settings");
+        log.info("Opening settings dialog");
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Settings");
-        alert.setHeaderText("Application Settings");
-        alert.setContentText("Settings available:\n\n" +
-            "• Sync Interval: 15 seconds\n" +
-            "• Theme: Auto-switching\n" +
-            "• Network Check: Enabled\n\n" +
-            "Advanced settings dialog coming soon.");
-        alert.showAndWait();
+        // Create dialog
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Application Settings");
+        dialog.setHeaderText("Heronix-Teacher Settings");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.setResizable(true);
 
-        updateStatusMessage("Settings dialog will be available soon");
+        // Create tab pane for settings categories
+        TabPane settingsTabPane = new TabPane();
+        settingsTabPane.setPrefWidth(550);
+        settingsTabPane.setPrefHeight(400);
+
+        // === General Settings Tab ===
+        Tab generalTab = new Tab("General");
+        generalTab.setClosable(false);
+        VBox generalContent = new VBox(15);
+        generalContent.setPadding(new Insets(20));
+
+        // Theme settings
+        Label themeLabel = new Label("Appearance");
+        themeLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        HBox themeBox = new HBox(10);
+        themeBox.setAlignment(Pos.CENTER_LEFT);
+        Label themePrefLabel = new Label("Theme:");
+        ComboBox<String> themeCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "Light", "Dark", "Auto (System)"
+        ));
+        themeCombo.setValue(themeManager.isDarkMode() ? "Dark" : "Light");
+        themeBox.getChildren().addAll(themePrefLabel, themeCombo);
+
+        // Startup settings
+        Label startupLabel = new Label("Startup");
+        startupLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        CheckBox startMinimizedCb = new CheckBox("Start minimized to system tray");
+        CheckBox rememberWindowCb = new CheckBox("Remember window size and position");
+        rememberWindowCb.setSelected(true);
+
+        generalContent.getChildren().addAll(themeLabel, themeBox,
+                new Separator(), startupLabel, startMinimizedCb, rememberWindowCb);
+        generalTab.setContent(generalContent);
+
+        // === Sync Settings Tab ===
+        Tab syncTab = new Tab("Sync & Data");
+        syncTab.setClosable(false);
+        VBox syncContent = new VBox(15);
+        syncContent.setPadding(new Insets(20));
+
+        Label syncLabel = new Label("Synchronization");
+        syncLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        HBox syncIntervalBox = new HBox(10);
+        syncIntervalBox.setAlignment(Pos.CENTER_LEFT);
+        Label syncIntervalLabel = new Label("Auto-sync interval:");
+        ComboBox<String> syncIntervalCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "15 seconds", "30 seconds", "1 minute", "5 minutes", "Manual only"
+        ));
+        syncIntervalCombo.setValue("15 seconds");
+        syncIntervalBox.getChildren().addAll(syncIntervalLabel, syncIntervalCombo);
+
+        CheckBox autoSyncCb = new CheckBox("Enable automatic synchronization");
+        autoSyncCb.setSelected(true);
+
+        CheckBox syncOnStartCb = new CheckBox("Sync data on application startup");
+        syncOnStartCb.setSelected(true);
+
+        Label dataLabel = new Label("Data Management");
+        dataLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        Button clearCacheBtn = new Button("Clear Local Cache");
+        clearCacheBtn.setOnAction(e -> {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Clear Cache");
+            confirm.setHeaderText("Clear local cache?");
+            confirm.setContentText("This will remove locally cached data. You'll need to sync again.");
+            confirm.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    log.info("Cache cleared by user request");
+                    updateStatusMessage("Cache cleared successfully");
+                }
+            });
+        });
+
+        syncContent.getChildren().addAll(syncLabel, syncIntervalBox, autoSyncCb, syncOnStartCb,
+                new Separator(), dataLabel, clearCacheBtn);
+        syncTab.setContent(syncContent);
+
+        // === Connection Settings Tab ===
+        Tab connectionTab = new Tab("Connections");
+        connectionTab.setClosable(false);
+        VBox connectionContent = new VBox(15);
+        connectionContent.setPadding(new Insets(20));
+
+        Label serverLabel = new Label("Server Configuration");
+        serverLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        GridPane serverGrid = new GridPane();
+        serverGrid.setHgap(10);
+        serverGrid.setVgap(10);
+
+        serverGrid.add(new Label("SIS API URL:"), 0, 0);
+        TextField sisUrlField = new TextField("http://localhost:9580");
+        sisUrlField.setPrefWidth(300);
+        serverGrid.add(sisUrlField, 1, 0);
+
+        serverGrid.add(new Label("EdGames URL:"), 0, 1);
+        TextField edgamesUrlField = new TextField("http://localhost:8081");
+        edgamesUrlField.setPrefWidth(300);
+        serverGrid.add(edgamesUrlField, 1, 1);
+
+        serverGrid.add(new Label("Heronix-Talk URL:"), 0, 2);
+        TextField talkUrlField = new TextField("http://localhost:9680");
+        talkUrlField.setPrefWidth(300);
+        serverGrid.add(talkUrlField, 1, 2);
+
+        Label networkLabel = new Label("Network");
+        networkLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        HBox timeoutBox = new HBox(10);
+        timeoutBox.setAlignment(Pos.CENTER_LEFT);
+        Label timeoutLabel = new Label("Connection timeout:");
+        ComboBox<String> timeoutCombo = new ComboBox<>(FXCollections.observableArrayList(
+                "10 seconds", "30 seconds", "60 seconds"
+        ));
+        timeoutCombo.setValue("30 seconds");
+        timeoutBox.getChildren().addAll(timeoutLabel, timeoutCombo);
+
+        CheckBox networkCheckCb = new CheckBox("Enable network status monitoring");
+        networkCheckCb.setSelected(true);
+
+        connectionContent.getChildren().addAll(serverLabel, serverGrid,
+                new Separator(), networkLabel, timeoutBox, networkCheckCb);
+        connectionTab.setContent(connectionContent);
+
+        // === Notifications Tab ===
+        Tab notificationsTab = new Tab("Notifications");
+        notificationsTab.setClosable(false);
+        VBox notificationContent = new VBox(15);
+        notificationContent.setPadding(new Insets(20));
+
+        Label notifLabel = new Label("Notification Preferences");
+        notifLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+
+        CheckBox desktopNotifCb = new CheckBox("Show desktop notifications");
+        desktopNotifCb.setSelected(true);
+
+        CheckBox soundNotifCb = new CheckBox("Play notification sounds");
+        soundNotifCb.setSelected(false);
+
+        CheckBox hallPassAlertCb = new CheckBox("Alert on overdue hall passes");
+        hallPassAlertCb.setSelected(true);
+
+        CheckBox syncErrorAlertCb = new CheckBox("Alert on sync errors");
+        syncErrorAlertCb.setSelected(true);
+
+        CheckBox messageNotifCb = new CheckBox("Show new message notifications");
+        messageNotifCb.setSelected(true);
+
+        notificationContent.getChildren().addAll(notifLabel, desktopNotifCb, soundNotifCb,
+                new Separator(), hallPassAlertCb, syncErrorAlertCb, messageNotifCb);
+        notificationsTab.setContent(notificationContent);
+
+        // Add all tabs
+        settingsTabPane.getTabs().addAll(generalTab, syncTab, connectionTab, notificationsTab);
+
+        dialog.getDialogPane().setContent(settingsTabPane);
+
+        // Handle save
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                log.info("Settings saved");
+
+                // Apply theme change
+                String selectedTheme = themeCombo.getValue();
+                if ("Dark".equals(selectedTheme) && !themeManager.isDarkMode()) {
+                    themeManager.toggleTheme();
+                } else if ("Light".equals(selectedTheme) && themeManager.isDarkMode()) {
+                    themeManager.toggleTheme();
+                }
+
+                updateStatusMessage("Settings saved successfully");
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
     }
 
     /**

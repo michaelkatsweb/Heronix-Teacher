@@ -18,10 +18,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import javafx.stage.FileChooser;
 
 /**
  * Gradebook controller for spreadsheet-style grade entry
@@ -549,12 +555,103 @@ public class GradebookController {
     }
 
     /**
-     * Export grades
+     * Export grades to CSV file
      */
     @FXML
     public void exportGrades() {
         log.info("Export grades triggered");
-        showInfo("Export", "Grade export feature coming soon");
+
+        if (students.isEmpty()) {
+            showError("No data to export. Please load students first.");
+            return;
+        }
+
+        // Show file chooser
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Grades");
+        fileChooser.setInitialFileName("gradebook_export_" +
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
+
+        File file = fileChooser.showSaveDialog(gradebookTable.getScene().getWindow());
+
+        if (file != null) {
+            exportGradesToCsv(file);
+        }
+    }
+
+    /**
+     * Export grades data to CSV file
+     */
+    private void exportGradesToCsv(File file) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            // Write BOM for Excel UTF-8 compatibility
+            writer.write('\ufeff');
+
+            // Build header row
+            StringBuilder header = new StringBuilder();
+            header.append("Student Name,Student ID,Grade Level,Current GPA");
+
+            for (Assignment assignment : assignments) {
+                // Escape assignment name if it contains commas
+                String name = escapeCSV(assignment.getName());
+                header.append(",").append(name).append(" (").append(assignment.getMaxPoints()).append(" pts)");
+            }
+            writer.println(header);
+
+            // Write data rows
+            for (Student student : students) {
+                StringBuilder row = new StringBuilder();
+                row.append(escapeCSV(student.getFullName())).append(",");
+                row.append(escapeCSV(student.getStudentId())).append(",");
+                row.append(student.getGradeLevel()).append(",");
+                row.append(student.getCurrentGpa() != null ? String.format("%.2f", student.getCurrentGpa()) : "");
+
+                // Add grade for each assignment
+                for (Assignment assignment : assignments) {
+                    row.append(",");
+                    Optional<Grade> gradeOpt = gradebookService.getGrade(student.getId(), assignment.getId());
+
+                    if (gradeOpt.isPresent()) {
+                        Grade grade = gradeOpt.get();
+                        if (grade.getMissing()) {
+                            row.append("Missing");
+                        } else if (grade.getExcused()) {
+                            row.append("Excused");
+                        } else if (grade.getScore() != null) {
+                            row.append(String.format("%.1f", grade.getScore()));
+                        }
+                    }
+                }
+                writer.println(row);
+            }
+
+            log.info("Grades exported successfully to {}", file.getAbsolutePath());
+            showInfo("Export Successful",
+                    "Grades exported to:\n" + file.getName() + "\n\n" +
+                    "Exported " + students.size() + " students and " + assignments.size() + " assignments.");
+
+        } catch (Exception e) {
+            log.error("Error exporting grades to CSV", e);
+            showError("Failed to export grades: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Escape value for CSV (handle commas, quotes, newlines)
+     */
+    private String escapeCSV(String value) {
+        if (value == null) {
+            return "";
+        }
+        // If value contains comma, quote, or newline, wrap in quotes and escape existing quotes
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     /**
