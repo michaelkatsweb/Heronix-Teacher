@@ -917,7 +917,7 @@ public class ClubsController {
                             escapeCSV(club.getLocation()),
                             club.getCurrentEnrollment() != null ? club.getCurrentEnrollment() : 0,
                             club.getMaxCapacity() != null ? club.getMaxCapacity() : 0,
-                            club.getAvailableSpots() != null ? club.getAvailableSpots() : 0,
+                            club.getAvailableSpots(),
                             club.getActive() ? "Active" : "Inactive",
                             escapeCSV(club.getDescription())
                     ));

@@ -7,6 +7,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -483,18 +484,16 @@ public class MainController {
      */
     @FXML
     public void exportData() {
-        log.info("Export data triggered - navigating to Dashboard for export options");
-
-        // Navigate to Dashboard where the full export functionality is available
-        navigateTo("dashboard");
+        log.info("Export data triggered - showing export options");
 
         // Show info about export location
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Export Data");
         alert.setHeaderText("Export Options Available");
         alert.setContentText("Export options are available in the Dashboard:\n\n" +
-                "1. Click 'Reports' button for detailed reports with export\n" +
-                "2. Click 'Export Data' for quick export options\n\n" +
+                "1. Click 'Dashboard' in the sidebar\n" +
+                "2. Click 'Reports' button for detailed reports with export\n" +
+                "3. Click 'Export Data' for quick export options\n\n" +
                 "Available exports:\n" +
                 "• Student Roster (CSV)\n" +
                 "• Gradebook (CSV)\n" +
@@ -503,7 +502,7 @@ public class MainController {
                 "• Complete Summary Report (CSV)");
         alert.showAndWait();
 
-        updateStatusMessage("Navigate to Dashboard for export options");
+        updateStatusMessage("See Dashboard for export options");
     }
 
     /**
@@ -541,7 +540,7 @@ public class MainController {
         ComboBox<String> themeCombo = new ComboBox<>(FXCollections.observableArrayList(
                 "Light", "Dark", "Auto (System)"
         ));
-        themeCombo.setValue(themeManager.isDarkMode() ? "Dark" : "Light");
+        themeCombo.setValue("dark".equalsIgnoreCase(themeManager.getCurrentTheme()) ? "Dark" : "Light");
         themeBox.getChildren().addAll(themePrefLabel, themeCombo);
 
         // Startup settings
@@ -688,10 +687,12 @@ public class MainController {
 
                 // Apply theme change
                 String selectedTheme = themeCombo.getValue();
-                if ("Dark".equals(selectedTheme) && !themeManager.isDarkMode()) {
-                    themeManager.toggleTheme();
-                } else if ("Light".equals(selectedTheme) && themeManager.isDarkMode()) {
-                    themeManager.toggleTheme();
+                Scene scene = contentArea.getScene();
+                boolean currentlyDark = "dark".equalsIgnoreCase(themeManager.getCurrentTheme());
+                if ("Dark".equals(selectedTheme) && !currentlyDark && scene != null) {
+                    themeManager.toggleTheme(scene);
+                } else if ("Light".equals(selectedTheme) && currentlyDark && scene != null) {
+                    themeManager.toggleTheme(scene);
                 }
 
                 updateStatusMessage("Settings saved successfully");

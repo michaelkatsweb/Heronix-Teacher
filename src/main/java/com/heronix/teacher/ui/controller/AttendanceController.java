@@ -744,10 +744,10 @@ public class AttendanceController {
                                     currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
                                     periodName,
                                     escapeCSV(row.getStudentName()),
-                                    escapeCSV(row.getStudentId()),
+                                    escapeCSV(row.getStudentIdStr()),
                                     row.getStatus(),
-                                    row.getArrivalTime() != null ? row.getArrivalTime() : "",
-                                    escapeCSV(row.getNotes())
+                                    row.arrivalTimeProperty().get() != null ? row.arrivalTimeProperty().get() : "",
+                                    escapeCSV(row.notesProperty().get())
                             ));
                             totalRecords++;
                         }
