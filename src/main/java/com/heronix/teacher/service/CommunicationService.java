@@ -1149,4 +1149,59 @@ public class CommunicationService {
     public NotificationSoundService getSoundService() {
         return soundService;
     }
+
+    // ========================================================================
+    // STUDENT MESSAGING SUPPORT
+    // ========================================================================
+
+    /**
+     * Get all student users that the teacher can message
+     */
+    public CompletableFuture<List<TalkUserDTO>> getStudentUsers() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return apiClient.getStudentUsers();
+            } catch (Exception e) {
+                log.error("Error fetching student users", e);
+                return new ArrayList<>();
+            }
+        });
+    }
+
+    /**
+     * Check if a user is a student
+     */
+    public boolean isStudentUser(TalkUserDTO user) {
+        return apiClient.isStudentUser(user);
+    }
+
+    /**
+     * Get DM channels with students only
+     */
+    public CompletableFuture<List<TalkChannelDTO>> getStudentDirectMessages() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                List<TalkChannelDTO> allDMs = apiClient.getDirectMessages();
+                // Filter to only DMs with students
+                // Note: This requires the channel name to contain "student_" username pattern
+                // or we'd need additional API support
+                return allDMs.stream()
+                        .filter(dm -> dm.getName() != null &&
+                                (dm.getName().toLowerCase().contains("student") ||
+                                 dm.getDescription() != null && dm.getDescription().toLowerCase().contains("student")))
+                        .collect(java.util.stream.Collectors.toList());
+            } catch (Exception e) {
+                log.error("Error fetching student DMs", e);
+                return new ArrayList<>();
+            }
+        });
+    }
+
+    /**
+     * Start or continue a conversation with a student
+     * @param studentUserId The Talk user ID of the student
+     */
+    public CompletableFuture<TalkChannelDTO> startStudentConversation(Long studentUserId) {
+        return startDirectMessage(studentUserId);
+    }
 }

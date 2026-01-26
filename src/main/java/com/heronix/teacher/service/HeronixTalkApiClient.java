@@ -1219,6 +1219,47 @@ public class HeronixTalkApiClient {
     }
 
     // ========================================================================
+    // STUDENT MESSAGES
+    // ========================================================================
+
+    /**
+     * Get users filtered by role (for finding students)
+     * @param role Role to filter by (e.g., "Student")
+     * @return List of users with the specified role
+     */
+    public List<TalkUserDTO> getUsersByRole(String role) throws Exception {
+        HttpRequest request = buildGetRequest("/api/users?role=" +
+                java.net.URLEncoder.encode(role, java.nio.charset.StandardCharsets.UTF_8));
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 200) {
+            List<TalkUserDTO> allUsers = objectMapper.readValue(response.body(),
+                    new TypeReference<List<TalkUserDTO>>() {});
+            // Filter by role on client side if server doesn't support role filter
+            return allUsers.stream()
+                    .filter(u -> role.equalsIgnoreCase(u.getRole()))
+                    .collect(java.util.stream.Collectors.toList());
+        } else {
+            throw new Exception("Failed to fetch users by role: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get all student users for easy messaging
+     */
+    public List<TalkUserDTO> getStudentUsers() throws Exception {
+        return getUsersByRole("Student");
+    }
+
+    /**
+     * Check if a user is a student based on their role
+     */
+    public boolean isStudentUser(TalkUserDTO user) {
+        return user != null && "Student".equalsIgnoreCase(user.getRole());
+    }
+
+    // ========================================================================
     // ALERTS
     // ========================================================================
 
