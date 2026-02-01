@@ -23,7 +23,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EdGamesApiClient {
 
-    private static final String BASE_URL = "http://localhost:8081/api";
+    @org.springframework.beans.factory.annotation.Value("${heronix.edgames.url:http://localhost:8081/api}")
+    private String baseUrl;
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private final ObjectMapper objectMapper;
@@ -45,7 +46,7 @@ public class EdGamesApiClient {
             ));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/teacher/login"))
+                    .uri(URI.create(baseUrl + "/teacher/login"))
                     .timeout(TIMEOUT)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
@@ -75,7 +76,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getPendingDevices() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/device/management/pending"))
+                    .uri(URI.create(baseUrl + "/device/management/pending"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -102,7 +103,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getActiveDevices() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/device/management/active"))
+                    .uri(URI.create(baseUrl + "/device/management/active"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -129,7 +130,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getDevicesByStudent(String studentId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/device/management/student/" + studentId))
+                    .uri(URI.create(baseUrl + "/device/management/student/" + studentId))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -160,7 +161,7 @@ public class EdGamesApiClient {
             ));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/device/management/" + deviceId + "/approve"))
+                    .uri(URI.create(baseUrl + "/device/management/" + deviceId + "/approve"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .header("Content-Type", "application/json")
@@ -188,7 +189,7 @@ public class EdGamesApiClient {
      */
     public boolean rejectDevice(String deviceId, String reason) {
         try {
-            String url = BASE_URL + "/device/management/" + deviceId + "/reject";
+            String url = baseUrl + "/device/management/" + deviceId + "/reject";
             if (reason != null && !reason.isEmpty()) {
                 url += "?reason=" + reason;
             }
@@ -221,7 +222,7 @@ public class EdGamesApiClient {
      */
     public boolean revokeDevice(String deviceId, String reason) {
         try {
-            String url = BASE_URL + "/device/management/" + deviceId + "/revoke";
+            String url = baseUrl + "/device/management/" + deviceId + "/revoke";
             if (reason != null && !reason.isEmpty()) {
                 url += "?reason=" + reason;
             }
@@ -255,7 +256,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getDeviceStats() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/device/management/stats"))
+                    .uri(URI.create(baseUrl + "/device/management/stats"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -286,7 +287,7 @@ public class EdGamesApiClient {
         for (String endpoint : healthEndpoints) {
             try {
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(BASE_URL + endpoint))
+                        .uri(URI.create(baseUrl + endpoint))
                         .timeout(Duration.ofSeconds(3))
                         .GET()
                         .build();
@@ -303,7 +304,7 @@ public class EdGamesApiClient {
         // Fallback: try to connect to base URL
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL.replace("/api", "")))
+                    .uri(URI.create(baseUrl.replace("/api", "")))
                     .timeout(Duration.ofSeconds(3))
                     .GET()
                     .build();
@@ -335,7 +336,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getStudentPlayTimeReport(String studentId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/analytics/student/" + studentId))
+                    .uri(URI.create(baseUrl + "/analytics/student/" + studentId))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -362,7 +363,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getStudentPlayTimeReport(String studentId, String startDate, String endDate) {
         try {
             String url = String.format("%s/analytics/student/%s/range?startDate=%s&endDate=%s",
-                    BASE_URL, studentId, startDate, endDate);
+                    baseUrl, studentId, startDate, endDate);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -392,7 +393,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getDevicePlayTimeReport(String deviceId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/analytics/device/" + deviceId))
+                    .uri(URI.create(baseUrl + "/analytics/device/" + deviceId))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -419,7 +420,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getClassPlayTimeReport(String startDate, String endDate) {
         try {
             String url = String.format("%s/analytics/class?startDate=%s&endDate=%s",
-                    BASE_URL, startDate, endDate);
+                    baseUrl, startDate, endDate);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -449,7 +450,7 @@ public class EdGamesApiClient {
     public String exportClassReportCSV(String startDate, String endDate) {
         try {
             String url = String.format("%s/analytics/class/export/csv?startDate=%s&endDate=%s",
-                    BASE_URL, startDate, endDate);
+                    baseUrl, startDate, endDate);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -479,7 +480,7 @@ public class EdGamesApiClient {
     public String getParentSummary(String studentId) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/analytics/student/" + studentId + "/parent-summary"))
+                    .uri(URI.create(baseUrl + "/analytics/student/" + studentId + "/parent-summary"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -506,7 +507,7 @@ public class EdGamesApiClient {
     public String getParentSummary(String studentId, String startDate, String endDate) {
         try {
             String url = String.format("%s/analytics/student/%s/parent-summary/range?startDate=%s&endDate=%s",
-                    BASE_URL, studentId, startDate, endDate);
+                    baseUrl, studentId, startDate, endDate);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -547,7 +548,7 @@ public class EdGamesApiClient {
             );
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/sessions"))
+                    .uri(URI.create(baseUrl + "/game/sessions"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .header("Content-Type", "application/json")
@@ -576,7 +577,7 @@ public class EdGamesApiClient {
     public Map<String, Object> getGameSession(String sessionCode) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/sessions/" + sessionCode))
+                    .uri(URI.create(baseUrl + "/game/sessions/" + sessionCode))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -603,7 +604,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getTeacherGameSessions() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/sessions"))
+                    .uri(URI.create(baseUrl + "/game/sessions"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -630,7 +631,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getSessionLeaderboard(String sessionCode) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/sessions/" + sessionCode + "/leaderboard"))
+                    .uri(URI.create(baseUrl + "/game/sessions/" + sessionCode + "/leaderboard"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -657,7 +658,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getQuestionSets() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/question-sets"))
+                    .uri(URI.create(baseUrl + "/game/question-sets"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -684,7 +685,7 @@ public class EdGamesApiClient {
     public List<Map<String, Object>> getPresetQuestionSets() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/question-sets/presets"))
+                    .uri(URI.create(baseUrl + "/game/question-sets/presets"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .GET()
@@ -719,7 +720,7 @@ public class EdGamesApiClient {
             );
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/question-sets"))
+                    .uri(URI.create(baseUrl + "/game/question-sets"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .header("Content-Type", "application/json")
@@ -759,7 +760,7 @@ public class EdGamesApiClient {
             );
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/game/question-sets/" + setId + "/questions"))
+                    .uri(URI.create(baseUrl + "/game/question-sets/" + setId + "/questions"))
                     .timeout(TIMEOUT)
                     .header("Authorization", "Bearer " + jwtToken)
                     .header("Content-Type", "application/json")
@@ -786,6 +787,6 @@ public class EdGamesApiClient {
      * Get WebSocket URL for real-time game updates
      */
     public String getWebSocketUrl() {
-        return BASE_URL.replace("http://", "ws://").replace("/api", "") + "/ws/game";
+        return baseUrl.replace("http://", "ws://").replace("/api", "") + "/ws/game";
     }
 }

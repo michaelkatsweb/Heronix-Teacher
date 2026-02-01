@@ -31,7 +31,7 @@ public class AdminApiClient {
 
     public AdminApiClient(
             ObjectMapper objectMapper,
-            @Value("${sync.admin-server.url:http://localhost:8080}") String baseUrl) {
+            @Value("${sync.admin-server.url:http://localhost:9590}") String baseUrl) {
         this.objectMapper = objectMapper;
         this.baseUrl = baseUrl;
         this.httpClient = HttpClient.newBuilder()

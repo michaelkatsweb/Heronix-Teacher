@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 public class DismissalService {
 
-    @Value("${sync.admin-server.url:http://localhost:8080}")
+    @Value("${sync.admin-server.url:http://localhost:9590}")
     private String serverUrl;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
