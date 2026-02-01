@@ -6,6 +6,7 @@
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.heronix.teacher.ui.controller.AssignmentDialogController"
       spacing="15" styleClass="dialog-pane"
       prefWidth="500" prefHeight="600">
 

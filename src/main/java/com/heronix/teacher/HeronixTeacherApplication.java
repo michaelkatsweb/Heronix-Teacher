@@ -1,5 +1,8 @@
 package com.heronix.teacher;
 
+import com.heronix.teacher.model.domain.Teacher;
+import com.heronix.teacher.repository.TeacherRepository;
+import com.heronix.teacher.service.SessionManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -10,6 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 
 /**
  * Main application class for Heronix-Teacher
@@ -70,40 +78,145 @@ public class HeronixTeacherApplication extends Application {
             log.info("Starting JavaFX application...");
             this.primaryStage = primaryStage;
 
-            // Load LOGIN window (changed from Main.fxml)
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
-            loader.setControllerFactory(springContext::getBean);
-
-            Parent root = loader.load();
-
-            // Create scene
-            Scene scene = new Scene(root, 800, 600);
-
-            // Note: Stylesheet is loaded in Login.fxml, no need to add here
-
-            // Configure stage
-            primaryStage.setTitle("Heronix-Teacher - Login");
-            primaryStage.setScene(scene);
-            primaryStage.setMinWidth(800);
-            primaryStage.setMinHeight(600);
-            primaryStage.setResizable(false);  // Fixed size for login screen
-
-            // Center on screen
-            primaryStage.centerOnScreen();
-
             // Handle close request
             primaryStage.setOnCloseRequest(event -> {
                 log.info("Application close requested");
                 Platform.exit();
             });
 
-            primaryStage.show();
-            log.info("JavaFX application started successfully - Login screen displayed");
+            // Check for SSO token from Heronix Hub
+            String ssoTeacherName = attemptSsoLogin();
+
+            if (ssoTeacherName != null) {
+                // SSO successful - go directly to main application
+                log.info("SSO login successful for: {}, skipping login screen", ssoTeacherName);
+                showMainApplication(primaryStage, ssoTeacherName);
+            } else {
+                // No SSO - show normal login screen
+                showLoginScreen(primaryStage);
+            }
+
+            log.info("JavaFX application started successfully");
 
         } catch (Exception e) {
             log.error("Failed to start JavaFX application", e);
             Platform.exit();
         }
+    }
+
+    /**
+     * Attempt SSO login by reading the Hub's JWT token file.
+     */
+    private String attemptSsoLogin() {
+        try {
+            String tokenFilePath = System.getProperty("user.home") + "/.heronix/auth/token.jwt";
+            Path tokenPath = Paths.get(tokenFilePath);
+
+            if (!Files.exists(tokenPath)) {
+                log.debug("SSO token file not found: {}", tokenFilePath);
+                return null;
+            }
+
+            String token = Files.readString(tokenPath).trim();
+            if (token.isEmpty()) return null;
+
+            // Parse JWT payload (trusted local file from Hub)
+            String[] parts = token.split("\\.");
+            if (parts.length != 3) return null;
+
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            String username = extractJsonValue(payload, "sub");
+            String fullName = extractJsonValue(payload, "fullName");
+            String role = extractJsonValue(payload, "role");
+
+            if (username == null || username.isEmpty()) return null;
+
+            // Check expiration
+            String expStr = extractJsonValue(payload, "exp");
+            if (expStr != null) {
+                long exp = Long.parseLong(expStr);
+                if (System.currentTimeMillis() / 1000 > exp) {
+                    log.warn("SSO token has expired");
+                    return null;
+                }
+            }
+
+            // Look up the teacher in the local database
+            TeacherRepository teacherRepo = springContext.getBean(TeacherRepository.class);
+            Optional<Teacher> teacherOpt = teacherRepo.findByEmployeeId(username);
+
+            if (teacherOpt.isEmpty()) {
+                log.warn("SSO: Teacher not found in local DB for employeeId: {}", username);
+                return null;
+            }
+
+            // Establish session
+            SessionManager sessionManager = springContext.getBean(SessionManager.class);
+            sessionManager.login(teacherOpt.get());
+
+            log.info("SSO authentication successful: {} (role: {})", username, role);
+            return sessionManager.getCurrentTeacherName();
+
+        } catch (Exception e) {
+            log.warn("SSO login failed, falling back to login screen: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String extractJsonValue(String json, String key) {
+        String searchKey = "\"" + key + "\"";
+        int keyIdx = json.indexOf(searchKey);
+        if (keyIdx < 0) return null;
+        int colonIdx = json.indexOf(':', keyIdx + searchKey.length());
+        if (colonIdx < 0) return null;
+        int valueStart = colonIdx + 1;
+        while (valueStart < json.length() && json.charAt(valueStart) == ' ') valueStart++;
+        if (valueStart >= json.length()) return null;
+        if (json.charAt(valueStart) == '"') {
+            int valueEnd = json.indexOf('"', valueStart + 1);
+            if (valueEnd < 0) return null;
+            return json.substring(valueStart + 1, valueEnd);
+        } else {
+            int valueEnd = valueStart;
+            while (valueEnd < json.length() && json.charAt(valueEnd) != ',' && json.charAt(valueEnd) != '}') valueEnd++;
+            return json.substring(valueStart, valueEnd).trim();
+        }
+    }
+
+    private void showLoginScreen(Stage stage) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
+        loader.setControllerFactory(springContext::getBean);
+        Parent root = loader.load();
+
+        Scene scene = new Scene(root, 800, 600);
+        stage.setTitle("Heronix-Teacher - Login");
+        stage.setScene(scene);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
+        stage.setResizable(false);
+        stage.centerOnScreen();
+        stage.show();
+    }
+
+    private void showMainApplication(Stage stage, String teacherName) throws Exception {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Main.fxml"));
+        loader.setControllerFactory(springContext::getBean);
+        Parent root = loader.load();
+
+        Scene scene = new Scene(root, 1200, 800);
+        String stylesheet = getClass().getResource("/css/light-theme.css") != null
+                ? getClass().getResource("/css/light-theme.css").toExternalForm() : null;
+        if (stylesheet != null) {
+            scene.getStylesheets().add(stylesheet);
+        }
+
+        stage.setTitle("Heronix-Teacher - " + teacherName);
+        stage.setScene(scene);
+        stage.setMinWidth(800);
+        stage.setMinHeight(600);
+        stage.setResizable(true);
+        stage.centerOnScreen();
+        stage.show();
     }
 
     /**

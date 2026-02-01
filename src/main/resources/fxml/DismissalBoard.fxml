@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.DismissalBoardController"
+            prefWidth="1100" prefHeight="700">
+
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="20" right="20" bottom="10" left="20"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label text="Dismissal Board" styleClass="welcome-title">
+                    <font><Font name="System Bold" size="24"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="dateLabel" text="">
+                    <font><Font size="14"/></font>
+                </Label>
+                <CheckBox fx:id="autoRefreshToggle" text="Auto-Refresh (15s)" selected="true"/>
+                <ProgressIndicator fx:id="loadingIndicator" prefWidth="24" prefHeight="24" visible="false"/>
+            </HBox>
+
+            <!-- Stats -->
+            <HBox spacing="20" alignment="CENTER_LEFT">
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card">
+                    <padding><Insets top="8" right="15" bottom="8" left="15"/></padding>
+                    <Label fx:id="statBusArrivals" text="0" styleClass="stat-value">
+                        <font><Font name="System Bold" size="20"/></font>
+                    </Label>
+                    <Label text="Buses"><font><Font size="11"/></font></Label>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card">
+                    <padding><Insets top="8" right="15" bottom="8" left="15"/></padding>
+                    <Label fx:id="statCarPickups" text="0" styleClass="stat-value">
+                        <font><Font name="System Bold" size="20"/></font>
+                    </Label>
+                    <Label text="Car Pickups"><font><Font size="11"/></font></Label>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card">
+                    <padding><Insets top="8" right="15" bottom="8" left="15"/></padding>
+                    <Label fx:id="statPending" text="0" styleClass="stat-value">
+                        <font><Font name="System Bold" size="20"/></font>
+                    </Label>
+                    <Label text="Pending"><font><Font size="11"/></font></Label>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2" styleClass="stat-card">
+                    <padding><Insets top="8" right="15" bottom="8" left="15"/></padding>
+                    <Label fx:id="statDeparted" text="0" styleClass="stat-value">
+                        <font><Font name="System Bold" size="20"/></font>
+                    </Label>
+                    <Label text="Departed"><font><Font size="11"/></font></Label>
+                </VBox>
+            </HBox>
+
+            <!-- Filter -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Filter:"><font><Font size="13"/></font></Label>
+                <ComboBox fx:id="typeFilter" promptText="All Types" prefWidth="150"/>
+                <TextField fx:id="searchField" promptText="Search..." prefWidth="200"/>
+                <Button text="Refresh" onAction="#handleRefresh" styleClass="nav-button">
+                    <font><Font size="12"/></font>
+                </Button>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="recordCountLabel" text="No events">
+                    <font><Font size="13"/></font>
+                </Label>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox>
+            <padding>
+                <Insets top="5" right="20" bottom="20" left="20"/>
+            </padding>
+            <!-- Counselor Summon Notification Banner -->
+            <VBox fx:id="notificationBanner" spacing="5" visible="false" managed="false"
+                  style="-fx-background-color: #FFF3E0; -fx-border-color: #FF9800; -fx-border-radius: 5; -fx-background-radius: 5; -fx-padding: 10;">
+                <Label fx:id="notificationTitle" text="" style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #E65100;"/>
+                <Label fx:id="notificationMessage" text="" wrapText="true" style="-fx-font-size: 13;"/>
+                <Button text="Dismiss" onAction="#handleDismissNotification" styleClass="nav-button" style="-fx-font-size: 11;"/>
+            </VBox>
+            <TableView fx:id="eventsTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="typeColumn" text="Type" prefWidth="100" minWidth="80"/>
+                    <TableColumn fx:id="busNumberColumn" text="Bus #" prefWidth="80" minWidth="60"/>
+                    <TableColumn fx:id="studentNameColumn" text="Student Name" prefWidth="200" minWidth="150"/>
+                    <TableColumn fx:id="parentNameColumn" text="Parent" prefWidth="150" minWidth="120"/>
+                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="100" minWidth="80"/>
+                    <TableColumn fx:id="arrivalTimeColumn" text="Arrival Time" prefWidth="120" minWidth="100"/>
+                    <TableColumn fx:id="calledTimeColumn" text="Called Time" prefWidth="120" minWidth="100"/>
+                    <TableColumn fx:id="notesColumn" text="Notes" prefWidth="200" minWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+
+</BorderPane>

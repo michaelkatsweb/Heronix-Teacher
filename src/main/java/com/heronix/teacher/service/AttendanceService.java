@@ -43,8 +43,50 @@ public class AttendanceService {
     @Value("${eduproteacher.roster.mock.enabled:true}")
     private boolean rosterMockEnabled;
 
-    // School start time (configurable)
-    private static final LocalTime SCHOOL_START_TIME = LocalTime.of(8, 0);
+    // Default school start time (fallback if bell schedule unavailable)
+    private static final LocalTime DEFAULT_SCHOOL_START_TIME = LocalTime.of(8, 0);
+
+    // Cached bell schedule period timings: periodNumber -> start time
+    private Map<Integer, LocalTime> periodStartTimes = new HashMap<>();
+    private boolean bellScheduleLoaded = false;
+
+    /**
+     * Get the start time for a specific period from the bell schedule.
+     * Falls back to the default school start time if unavailable.
+     */
+    private LocalTime getPeriodStartTime(Integer period) {
+        if (!bellScheduleLoaded) {
+            loadBellSchedule();
+        }
+        if (period != null && periodStartTimes.containsKey(period)) {
+            return periodStartTimes.get(period);
+        }
+        return DEFAULT_SCHOOL_START_TIME;
+    }
+
+    private void loadBellSchedule() {
+        bellScheduleLoaded = true;
+        try {
+            Map<String, Object> schedule = adminApiClient.getBellSchedule();
+            if (Boolean.TRUE.equals(schedule.get("success"))) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> periods = (List<Map<String, Object>>) schedule.get("periods");
+                if (periods != null) {
+                    for (Map<String, Object> p : periods) {
+                        Integer periodNum = (Integer) p.get("periodNumber");
+                        Object startTimeObj = p.get("startTime");
+                        if (periodNum != null && startTimeObj != null) {
+                            LocalTime startTime = LocalTime.parse(startTimeObj.toString());
+                            periodStartTimes.put(periodNum, startTime);
+                        }
+                    }
+                    log.info("Loaded bell schedule with {} period start times", periodStartTimes.size());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not load bell schedule, using default start time: {}", e.getMessage());
+        }
+    }
 
     // === Daily Attendance Management ===
 
@@ -80,7 +122,7 @@ public class AttendanceService {
 
         // Calculate tardiness if arrival time provided
         if (arrivalTime != null) {
-            attendance.calculateMinutesLate(SCHOOL_START_TIME);
+            attendance.calculateMinutesLate(getPeriodStartTime(attendance.getPeriodNumber()));
         }
 
         return attendanceRepository.save(attendance);
@@ -516,7 +558,7 @@ public class AttendanceService {
             attendance.setStatus("TARDY");
             attendance.setArrivalTime(arrivalTime);
             attendance.setNotes(notes);
-            // Minutes late can be calculated if we know the period start time
+            attendance.calculateMinutesLate(getPeriodStartTime(period));
             attendanceRepository.save(attendance);
         } else {
             Attendance attendance = Attendance.builder()
@@ -525,6 +567,38 @@ public class AttendanceService {
                     .periodNumber(period)
                     .status("TARDY")
                     .arrivalTime(arrivalTime)
+                    .notes(notes)
+                    .excused(false)
+                    .syncStatus("pending")
+                    .build();
+            attendanceRepository.save(attendance);
+        }
+    }
+
+    /**
+     * Mark student with a special status (ISS, OSS, TESTING, etc.) for a specific period
+     */
+    @Transactional
+    public void markStatusForPeriod(Long studentId, LocalDate date, Integer period, String status, String notes) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        Optional<Attendance> existing = attendanceRepository.findByDateAndPeriod(date, period)
+                .stream()
+                .filter(a -> a.getStudent().getId().equals(studentId))
+                .findFirst();
+
+        if (existing.isPresent()) {
+            Attendance attendance = existing.get();
+            attendance.setStatus(status);
+            attendance.setNotes(notes);
+            attendanceRepository.save(attendance);
+        } else {
+            Attendance attendance = Attendance.builder()
+                    .student(student)
+                    .attendanceDate(date)
+                    .periodNumber(period)
+                    .status(status)
                     .notes(notes)
                     .excused(false)
                     .syncStatus("pending")

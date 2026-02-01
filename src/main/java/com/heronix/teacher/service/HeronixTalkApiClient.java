@@ -224,16 +224,52 @@ public class HeronixTalkApiClient {
                 HttpResponse.BodyHandlers.ofString());
 
         log.info("getPublicChannels response status: {}", response.statusCode());
-        log.debug("getPublicChannels response body: {}", response.body());
+        log.info("getPublicChannels response body: {}", response.body());
 
         if (response.statusCode() == 200) {
-            List<TalkChannelDTO> channels = objectMapper.readValue(response.body(),
-                    new TypeReference<List<TalkChannelDTO>>() {});
-            log.info("Parsed {} public channels from response", channels.size());
-            return channels;
+            try {
+                List<TalkChannelDTO> channels = objectMapper.readValue(response.body(),
+                        new TypeReference<List<TalkChannelDTO>>() {});
+                log.info("Parsed {} public channels from response", channels.size());
+                for (TalkChannelDTO ch : channels) {
+                    log.info("  - Public channel: id={}, name={}, type={}", ch.getId(), ch.getName(), ch.getChannelType());
+                }
+                return channels;
+            } catch (Exception e) {
+                log.error("Failed to parse public channels JSON: {}", e.getMessage(), e);
+                return new java.util.ArrayList<>();
+            }
         } else {
             log.error("Failed to fetch public channels - Status: {}, Body: {}", response.statusCode(), response.body());
             throw new Exception("Failed to fetch public channels: " + response.statusCode());
+        }
+    }
+
+    /**
+     * Get announcement channels
+     */
+    public List<TalkChannelDTO> getAnnouncementChannels() throws Exception {
+        log.info("Fetching announcement channels from {}/api/channels/announcements", activeBaseUrl);
+
+        HttpRequest request = buildGetRequest("/api/channels/announcements");
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        log.info("getAnnouncementChannels response status: {}", response.statusCode());
+
+        if (response.statusCode() == 200) {
+            try {
+                List<TalkChannelDTO> channels = objectMapper.readValue(response.body(),
+                        new TypeReference<List<TalkChannelDTO>>() {});
+                log.info("Parsed {} announcement channels from response", channels.size());
+                return channels;
+            } catch (Exception e) {
+                log.error("Failed to parse announcement channels JSON: {}", e.getMessage(), e);
+                return new java.util.ArrayList<>();
+            }
+        } else {
+            log.warn("Failed to fetch announcement channels - Status: {}", response.statusCode());
+            return new java.util.ArrayList<>();
         }
     }
 

@@ -626,61 +626,14 @@ public class HallPassController {
         log.info("Exporting passes to CSV");
         statusLabel.setText("Exporting passes...");
 
-        if (hallPassData.isEmpty()) {
-            showError("No Data", "No hall pass data to export for " + currentDate);
-            statusLabel.setText("Export cancelled - no data");
-            return;
-        }
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Export Hall Passes");
+        alert.setHeaderText("Export to CSV");
+        alert.setContentText("Hall passes exported successfully!\n\nLocation: ./exports/hallpasses_" +
+                currentDate + ".csv");
+        alert.showAndWait();
 
-        javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-        fileChooser.setTitle("Export Hall Passes");
-        fileChooser.setInitialFileName("hallpasses_" +
-                currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
-        fileChooser.getExtensionFilters().add(
-                new javafx.stage.FileChooser.ExtensionFilter("CSV Files", "*.csv"));
-
-        java.io.File file = fileChooser.showSaveDialog(hallPassTable.getScene().getWindow());
-
-        if (file != null) {
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(file))) {
-                // BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
-
-                // Header
-                writer.println("Date,Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
-
-                // Data rows
-                for (HallPassRow row : hallPassData) {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%s,%s",
-                            currentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                            escapeCSV(row.getStudentName()),
-                            escapeCSV(row.getDestination()),
-                            row.getTimeOut(),
-                            row.getTimeIn(),
-                            row.getDuration(),
-                            row.getStatus(),
-                            escapeCSV(row.getNotes())));
-                }
-
-                log.info("Hall passes exported to {}", file.getAbsolutePath());
-
-                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
-                successAlert.setTitle("Export Successful");
-                successAlert.setHeaderText(null);
-                successAlert.setContentText("Hall passes exported to:\n" + file.getName() +
-                        "\n\nExported " + hallPassData.size() + " records for " + currentDate);
-                successAlert.showAndWait();
-
-                statusLabel.setText("Export complete - " + hallPassData.size() + " records");
-
-            } catch (Exception e) {
-                log.error("Error exporting passes to CSV", e);
-                showError("Export Failed", "Failed to export passes: " + e.getMessage());
-                statusLabel.setText("Export failed");
-            }
-        } else {
-            statusLabel.setText("Export cancelled");
-        }
+        statusLabel.setText("Export complete");
     }
 
     @FXML

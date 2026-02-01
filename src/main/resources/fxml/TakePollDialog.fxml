@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.TakePollDialogController"
+            prefWidth="600" prefHeight="550">
+
+    <top>
+        <VBox spacing="5">
+            <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
+            <Label fx:id="pollTitleLabel" text="Poll Title">
+                <font><Font name="System Bold" size="18"/></font>
+            </Label>
+            <Label fx:id="pollDescLabel" text="" wrapText="true" style="-fx-text-fill: #666;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true">
+            <VBox fx:id="questionsContainer" spacing="12">
+                <padding><Insets top="10" right="20" bottom="20" left="20"/></padding>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <padding><Insets top="10" right="20" bottom="15" left="20"/></padding>
+            <Label fx:id="errorLabel" text="" style="-fx-text-fill: red;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel"/>
+            <Button text="Submit" onAction="#handleSubmit"
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

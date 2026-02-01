@@ -330,7 +330,7 @@ public class CommunicationService {
     // ========================================================================
 
     /**
-     * Load/refresh channels list (includes user's channels and public channels)
+     * Load/refresh channels list (includes user's channels, public channels, and announcements)
      */
     public CompletableFuture<List<TalkChannelDTO>> loadChannels() {
         return CompletableFuture.supplyAsync(() -> {
@@ -351,6 +351,13 @@ public class CommunicationService {
                     log.debug("  - Public channel: {} (id={})", ch.getName(), ch.getId());
                 }
 
+                // Also get announcement channels
+                List<TalkChannelDTO> announcementChannels = apiClient.getAnnouncementChannels();
+                log.info("Got {} announcement channels from API", announcementChannels.size());
+                for (TalkChannelDTO ch : announcementChannels) {
+                    log.debug("  - Announcement channel: {} (id={})", ch.getName(), ch.getId());
+                }
+
                 // Merge lists, avoiding duplicates
                 java.util.Set<Long> seenIds = new java.util.HashSet<>();
                 List<TalkChannelDTO> allChannels = new ArrayList<>();
@@ -367,6 +374,12 @@ public class CommunicationService {
                     }
                 }
 
+                for (TalkChannelDTO channel : announcementChannels) {
+                    if (channel.getId() != null && seenIds.add(channel.getId())) {
+                        allChannels.add(channel);
+                    }
+                }
+
                 this.channels = allChannels;
                 log.info("Total merged channels: {}", allChannels.size());
 
@@ -378,8 +391,8 @@ public class CommunicationService {
                     }
                 });
 
-                log.info("Loaded {} channels ({} personal, {} public)",
-                        allChannels.size(), myChannels.size(), publicChannels.size());
+                log.info("Loaded {} channels ({} personal, {} public, {} announcements)",
+                        allChannels.size(), myChannels.size(), publicChannels.size(), announcementChannels.size());
 
                 return allChannels;
 

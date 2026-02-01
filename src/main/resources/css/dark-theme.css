@@ -99,8 +99,32 @@
     -fx-padding: 16;
 }
 
+.stat-card {
+    -fx-background-color: #36393f;
+    -fx-background-radius: 8;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8;
+    -fx-border-width: 0;
+    -fx-padding: 15;
+}
+
 .stat-card:hover {
     -fx-background-color: #40444b;
+}
+
+.stat-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #7289da;
+}
+
+.content-pane {
+    -fx-background-color: #2f3136;
+    -fx-padding: 15;
+}
+
+.content-tabs {
+    -fx-background-color: transparent;
 }
 
 /* Buttons */

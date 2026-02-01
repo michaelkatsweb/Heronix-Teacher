@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.PollResultsViewController"
+            prefWidth="600" prefHeight="500">
+
+    <top>
+        <VBox spacing="5">
+            <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
+            <Label fx:id="pollTitle" text="Poll Results">
+                <font><Font name="System Bold" size="18"/></font>
+            </Label>
+            <Label fx:id="totalResponsesLabel" text="Total responses: 0"/>
+        </VBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true">
+            <VBox fx:id="resultsContainer" spacing="12">
+                <padding><Insets top="10" right="20" bottom="20" left="20"/></padding>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER_RIGHT">
+            <padding><Insets top="10" right="20" bottom="15" left="20"/></padding>
+            <Button text="Close" onAction="#handleClose"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

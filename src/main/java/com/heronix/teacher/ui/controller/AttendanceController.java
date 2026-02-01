@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import javafx.stage.FileChooser;
 
@@ -244,6 +245,11 @@ public class AttendanceController {
                         case "PRESENT" -> setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;");
                         case "ABSENT" -> setStyle("-fx-text-fill: #F44336; -fx-font-weight: bold;");
                         case "TARDY" -> setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold;");
+                        case "ISS" -> setStyle("-fx-text-fill: #9C27B0; -fx-font-weight: bold;");
+                        case "OSS" -> setStyle("-fx-text-fill: #880E4F; -fx-font-weight: bold;");
+                        case "TESTING" -> setStyle("-fx-text-fill: #1565C0; -fx-font-weight: bold;");
+                        case "MEDICAL" -> setStyle("-fx-text-fill: #E65100; -fx-font-weight: bold;");
+                        case "EARLY_DISMISSAL" -> setStyle("-fx-text-fill: #6A1B9A; -fx-font-weight: bold;");
                         default -> setStyle("");
                     }
                 }
@@ -262,12 +268,13 @@ public class AttendanceController {
 
         // Actions column with buttons
         TableColumn<AttendanceRow, Void> actionsCol = new TableColumn<>("Actions");
-        actionsCol.setPrefWidth(180);
+        actionsCol.setPrefWidth(240);
         actionsCol.setCellFactory(column -> new TableCell<>() {
             private final Button presentBtn = new Button("✓");
             private final Button absentBtn = new Button("✗");
             private final Button tardyBtn = new Button("⏱");
-            private final HBox buttons = new HBox(5, presentBtn, absentBtn, tardyBtn);
+            private final MenuButton moreBtn = new MenuButton("▼");
+            private final HBox buttons = new HBox(5, presentBtn, absentBtn, tardyBtn, moreBtn);
 
             {
                 buttons.setAlignment(Pos.CENTER);
@@ -278,6 +285,14 @@ public class AttendanceController {
                 presentBtn.setStyle("-fx-min-width: 35px; -fx-min-height: 25px;");
                 absentBtn.setStyle("-fx-min-width: 35px; -fx-min-height: 25px;");
                 tardyBtn.setStyle("-fx-min-width: 35px; -fx-min-height: 25px;");
+                moreBtn.setStyle("-fx-min-width: 35px; -fx-min-height: 25px;");
+
+                MenuItem issItem = new MenuItem("ISS (In-School Suspension)");
+                MenuItem ossItem = new MenuItem("OSS (Out-of-School Suspension)");
+                MenuItem testingItem = new MenuItem("Testing");
+                MenuItem medicalItem = new MenuItem("Medical");
+                MenuItem earlyDismissalItem = new MenuItem("Early Dismissal");
+                moreBtn.getItems().addAll(issItem, ossItem, testingItem, medicalItem, earlyDismissalItem);
 
                 presentBtn.setOnAction(event -> {
                     AttendanceRow row = getTableView().getItems().get(getIndex());
@@ -292,6 +307,31 @@ public class AttendanceController {
                 tardyBtn.setOnAction(event -> {
                     AttendanceRow row = getTableView().getItems().get(getIndex());
                     markStudentTardy(row.getStudentId(), period);
+                });
+
+                issItem.setOnAction(event -> {
+                    AttendanceRow row = getTableView().getItems().get(getIndex());
+                    markStudentStatus(row.getStudentId(), period, "ISS", "In-School Suspension");
+                });
+
+                ossItem.setOnAction(event -> {
+                    AttendanceRow row = getTableView().getItems().get(getIndex());
+                    markStudentStatus(row.getStudentId(), period, "OSS", "Out-of-School Suspension");
+                });
+
+                testingItem.setOnAction(event -> {
+                    AttendanceRow row = getTableView().getItems().get(getIndex());
+                    markStudentStatus(row.getStudentId(), period, "TESTING", "Testing session");
+                });
+
+                medicalItem.setOnAction(event -> {
+                    AttendanceRow row = getTableView().getItems().get(getIndex());
+                    markStudentStatus(row.getStudentId(), period, "MEDICAL", "Medical visit");
+                });
+
+                earlyDismissalItem.setOnAction(event -> {
+                    AttendanceRow row = getTableView().getItems().get(getIndex());
+                    markStudentStatus(row.getStudentId(), period, "EARLY_DISMISSAL", "Early dismissal");
                 });
             }
 
@@ -574,12 +614,17 @@ public class AttendanceController {
     /**
      * Update statistics labels for a period
      */
+    private static final Set<String> PRESENT_STATUSES = Set.of(
+            "PRESENT", "TARDY", "REMOTE", "TESTING", "ISS", "SCHOOL_ACTIVITY");
+    private static final Set<String> ABSENT_STATUSES = Set.of(
+            "ABSENT", "EXCUSED_ABSENT", "UNEXCUSED_ABSENT", "OSS", "MEDICAL", "EARLY_DISMISSAL");
+
     private void updatePeriodStatistics(int period) {
         ObservableList<AttendanceRow> data = periodData.get(period);
         Map<String, Label> labels = periodStatsLabels.get(period);
 
-        long presentCount = data.stream().filter(r -> "PRESENT".equals(r.getStatus())).count();
-        long absentCount = data.stream().filter(r -> "ABSENT".equals(r.getStatus())).count();
+        long presentCount = data.stream().filter(r -> PRESENT_STATUSES.contains(r.getStatus())).count();
+        long absentCount = data.stream().filter(r -> ABSENT_STATUSES.contains(r.getStatus())).count();
         long tardyCount = data.stream().filter(r -> "TARDY".equals(r.getStatus())).count();
         long totalCount = data.size();
 
@@ -598,8 +643,8 @@ public class AttendanceController {
         long totalTardy = 0;
 
         for (ObservableList<AttendanceRow> data : periodData.values()) {
-            totalPresent += data.stream().filter(r -> "PRESENT".equals(r.getStatus())).count();
-            totalAbsent += data.stream().filter(r -> "ABSENT".equals(r.getStatus())).count();
+            totalPresent += data.stream().filter(r -> PRESENT_STATUSES.contains(r.getStatus())).count();
+            totalAbsent += data.stream().filter(r -> ABSENT_STATUSES.contains(r.getStatus())).count();
             totalTardy += data.stream().filter(r -> "TARDY".equals(r.getStatus())).count();
         }
 
@@ -665,6 +710,28 @@ public class AttendanceController {
             } catch (Exception e) {
                 log.error("Failed to mark student tardy", e);
                 showError("Error", "Failed to mark student tardy: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Mark student with a special status (ISS, OSS, TESTING) for a specific period
+     */
+    private void markStudentStatus(Long studentId, int period, String status, String defaultNote) {
+        TextInputDialog dialog = new TextInputDialog(defaultNote);
+        dialog.setTitle("Mark " + status);
+        dialog.setHeaderText("Mark Student " + status + " - Period " + period);
+        dialog.setContentText("Notes:");
+
+        dialog.showAndWait().ifPresent(notes -> {
+            try {
+                attendanceService.markStatusForPeriod(studentId, currentDate, period, status, notes);
+                loadPeriodData(period);
+                updateSummary();
+                statusLabel.setText("Student marked " + status + " for Period " + period);
+            } catch (Exception e) {
+                log.error("Failed to mark student {}", status, e);
+                showError("Error", "Failed to mark student " + status + ": " + e.getMessage());
             }
         });
     }

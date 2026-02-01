@@ -87,6 +87,8 @@ public class MainController {
     @FXML private Button deviceMgmtBtn;
     @FXML private Button gameAnalyticsBtn;
     @FXML private Button codeBreakerBtn;
+    @FXML private Button dismissalBtn;
+    @FXML private Button pollsBtn;
 
     // Status bar
     @FXML private Label statusMessageLabel;
@@ -395,6 +397,19 @@ public class MainController {
     }
 
     /**
+     * Show Dismissal Board view
+     */
+    @FXML
+    public void showDismissal() {
+        loadView("DismissalBoard", dismissalBtn);
+    }
+
+    @FXML
+    public void showPolls() {
+        loadView("Polls", pollsBtn);
+    }
+
+    /**
      * Load a view into content area
      */
     private void loadView(String viewName, Button activeButton) {
@@ -445,6 +460,9 @@ public class MainController {
         }
         if (codeBreakerBtn != null) {
             codeBreakerBtn.getStyleClass().remove("nav-button-active");
+        }
+        if (pollsBtn != null) {
+            pollsBtn.getStyleClass().remove("nav-button-active");
         }
 
         // Add active class to current button

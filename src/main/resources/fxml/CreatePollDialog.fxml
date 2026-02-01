@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.CreatePollDialogController"
+            prefWidth="700" prefHeight="600">
+
+    <top>
+        <VBox spacing="10">
+            <padding><Insets top="15" right="20" bottom="10" left="20"/></padding>
+            <Label text="Create New Poll">
+                <font><Font name="System Bold" size="18"/></font>
+            </Label>
+            <GridPane hgap="10" vgap="8">
+                <Label text="Title:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                <TextField fx:id="titleField" promptText="Poll title" prefWidth="450"
+                           GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.columnSpan="3"/>
+                <Label text="Description:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                <TextArea fx:id="descriptionField" promptText="Optional description" prefRowCount="2" prefWidth="450"
+                          GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.columnSpan="3"/>
+                <Label text="Audience:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="audienceCombo" prefWidth="150" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                <Label text="Anonymous:" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+                <CheckBox fx:id="anonymousCheck" GridPane.rowIndex="2" GridPane.columnIndex="3"/>
+                <Label text="Results Visible:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                <ComboBox fx:id="resultsVisibilityCombo" prefWidth="150" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+            </GridPane>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox spacing="8">
+            <padding><Insets top="5" right="20" bottom="10" left="20"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="Questions" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="+ Multiple Choice" onAction="#addMultipleChoice" style="-fx-font-size: 11;"/>
+                <Button text="+ Checkbox" onAction="#addCheckbox" style="-fx-font-size: 11;"/>
+                <Button text="+ Yes/No" onAction="#addYesNo" style="-fx-font-size: 11;"/>
+                <Button text="+ Short Text" onAction="#addShortText" style="-fx-font-size: 11;"/>
+            </HBox>
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+                <VBox fx:id="questionsContainer" spacing="10">
+                    <padding><Insets top="5" right="5" bottom="5" left="5"/></padding>
+                </VBox>
+            </ScrollPane>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <padding><Insets top="10" right="20" bottom="15" left="20"/></padding>
+            <Label fx:id="errorLabel" text="" style="-fx-text-fill: red;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Cancel" onAction="#handleCancel"/>
+            <Button text="Save Poll" onAction="#handleSave"
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

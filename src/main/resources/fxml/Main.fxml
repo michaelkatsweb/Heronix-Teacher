@@ -147,6 +147,14 @@
                     styleClass="nav-button"
                     maxWidth="Infinity" prefHeight="42"/>
 
+            <Button fx:id="dismissalBtn" text="🚌 Dismissal" onAction="#showDismissal"
+                    styleClass="nav-button"
+                    maxWidth="Infinity" prefHeight="42"/>
+
+            <Button fx:id="pollsBtn" text="📊 Polls" onAction="#showPolls"
+                    styleClass="nav-button"
+                    maxWidth="Infinity" prefHeight="42"/>
+
             <Separator/>
 
             <!-- Quick Actions Section - collapsible -->

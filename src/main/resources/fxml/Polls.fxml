@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.heronix.teacher.ui.controller.PollsController"
+            prefWidth="900" prefHeight="650" styleClass="main-container">
+
+    <top>
+        <VBox spacing="10">
+            <padding><Insets top="20" right="20" bottom="10" left="20"/></padding>
+            <Label text="Polls &amp; Surveys" styleClass="welcome-title">
+                <font><Font name="System Bold" size="22"/></font>
+            </Label>
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+            <!-- My Polls Tab -->
+            <Tab text="My Polls">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="15" bottom="15" left="15"/></padding>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="+ Create Poll" onAction="#handleCreatePoll"
+                                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                        <Button text="Refresh" onAction="#refreshMyPolls" styleClass="nav-button"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="myPollsCount" text="0 polls"/>
+                    </HBox>
+                    <TableView fx:id="myPollsTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="myTitleCol" text="Title" prefWidth="200" minWidth="150"/>
+                            <TableColumn fx:id="myAudienceCol" text="Audience" prefWidth="100"/>
+                            <TableColumn fx:id="myStatusCol" text="Status" prefWidth="90"/>
+                            <TableColumn fx:id="myResponsesCol" text="Responses" prefWidth="80"/>
+                            <TableColumn fx:id="myCreatedCol" text="Created" prefWidth="110"/>
+                            <TableColumn fx:id="myActionsCol" text="Actions" prefWidth="200"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- Available Polls Tab -->
+            <Tab text="Available Polls">
+                <VBox spacing="10">
+                    <padding><Insets top="10" right="15" bottom="15" left="15"/></padding>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button text="Refresh" onAction="#refreshAvailablePolls" styleClass="nav-button"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="availablePollsCount" text="0 polls"/>
+                    </HBox>
+                    <TableView fx:id="availablePollsTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="avTitleCol" text="Title" prefWidth="220" minWidth="150"/>
+                            <TableColumn fx:id="avCreatorCol" text="Creator" prefWidth="130"/>
+                            <TableColumn fx:id="avQuestionsCol" text="Questions" prefWidth="80"/>
+                            <TableColumn fx:id="avAnonymousCol" text="Anonymous" prefWidth="80"/>
+                            <TableColumn fx:id="avActionsCol" text="Actions" prefWidth="180"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+
+</BorderPane>

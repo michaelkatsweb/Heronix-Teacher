@@ -79,6 +79,22 @@
                     <TextField fx:id="channelSearchField" promptText="Search channels..." styleClass="search-field" HBox.hgrow="ALWAYS"/>
                 </HBox>
 
+                <!-- Connection Status Banner -->
+                <HBox fx:id="connectionStatusBanner" alignment="CENTER_LEFT" spacing="8"
+                      style="-fx-padding: 8 12; -fx-background-color: #FFF3CD; -fx-background-radius: 6;"
+                      visible="false" managed="false">
+                    <Label fx:id="connectionStatusIcon" text="⚠" style="-fx-font-size: 14px;"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label fx:id="connectionStatusLabel" text="Connecting..."
+                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #856404;"/>
+                        <Label fx:id="connectionStatusDetail" text=""
+                               style="-fx-font-size: 10px; -fx-text-fill: #856404;" wrapText="true"/>
+                    </VBox>
+                    <Button fx:id="retryConnectionBtn" text="Retry" onAction="#handleRetryConnection"
+                            styleClass="channel-list-add-button" prefHeight="24"
+                            visible="false" managed="false"/>
+                </HBox>
+
                 <ScrollPane fx:id="channelsScrollPane" VBox.vgrow="ALWAYS"
                            styleClass="channels-scroll-pane"
                            fitToWidth="true"
@@ -88,8 +104,8 @@
                         <placeholder>
                             <VBox alignment="CENTER" spacing="8" styleClass="empty-state-container">
                                 <Label text="📢" styleClass="empty-state-icon"/>
-                                <Label text="No channels" styleClass="empty-state-title" style="-fx-font-size: 13px;"/>
-                                <Label text="Click + to create one" styleClass="empty-state-message" style="-fx-font-size: 11px;"/>
+                                <Label fx:id="channelPlaceholderTitle" text="No channels" styleClass="empty-state-title" style="-fx-font-size: 13px;"/>
+                                <Label fx:id="channelPlaceholderMessage" text="Click + to create one" styleClass="empty-state-message" style="-fx-font-size: 11px;" wrapText="true" textAlignment="CENTER"/>
                             </VBox>
                         </placeholder>
                     </ListView>

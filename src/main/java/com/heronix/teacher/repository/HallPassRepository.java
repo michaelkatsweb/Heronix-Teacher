@@ -102,6 +102,11 @@ public interface HallPassRepository extends JpaRepository<HallPass, Long> {
     List<HallPass> findNeedingSync();
 
     /**
+     * Find records by sync status
+     */
+    List<HallPass> findBySyncStatus(String syncStatus);
+
+    /**
      * Find recent passes (last 7 days)
      */
     @Query("SELECT h FROM HallPass h WHERE h.passDate >= :date ORDER BY h.passDate DESC, h.timeOut DESC")

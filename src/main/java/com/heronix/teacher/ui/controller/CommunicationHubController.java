@@ -85,6 +85,16 @@ public class CommunicationHubController {
     // Connection Status (optional - may not exist in FXML)
     @FXML private Label connectionStatusLabel;
 
+    // Connection Status Banner (diagnostic UI)
+    @FXML private HBox connectionStatusBanner;
+    @FXML private Label connectionStatusIcon;
+    @FXML private Label connectionStatusDetail;
+    @FXML private Button retryConnectionBtn;
+
+    // Channel placeholder labels for dynamic messages
+    @FXML private Label channelPlaceholderTitle;
+    @FXML private Label channelPlaceholderMessage;
+
     // Invitation badge button (optional - may not exist in FXML)
     @FXML private Button invitationBadgeBtn;
 
@@ -168,10 +178,16 @@ public class CommunicationHubController {
     private void initializeTalkConnection() {
         log.info("=== initializeTalkConnection called ===");
 
+        // Show connecting status in banner
+        showConnectionBanner("connecting", "Connecting to Heronix-Talk...",
+                "Establishing connection to messaging server", false);
+
         if (sessionManager.getCurrentTeacher() == null) {
             log.warn("No teacher logged in, cannot initialize Talk connection");
+            showConnectionBanner("error", "Not Logged In",
+                    "Please log in to access messaging features", false);
             updateConnectionStatus(false);
-            loadSampleData(); // Fall back to offline mode
+            loadSampleData();
             return;
         }
 
@@ -179,6 +195,8 @@ public class CommunicationHubController {
         log.info("Stored password available: {}", storedPassword != null);
         if (storedPassword == null) {
             log.warn("No stored password for Talk authentication");
+            showConnectionBanner("error", "Authentication Required",
+                    "Please log out and log back in to enable messaging", false);
             updateConnectionStatus(false);
             loadSampleData();
             return;
@@ -193,22 +211,161 @@ public class CommunicationHubController {
         String employeeId = sessionManager.getCurrentTeacher().getEmployeeId();
         log.info("Initializing Talk connection for employee: {}", employeeId);
 
+        // First check if server is reachable
+        showConnectionBanner("connecting", "Checking Server...",
+                "Verifying Heronix-Talk server is available (port 9680)", false);
+
         communicationService.initialize(employeeId, storedPassword)
                 .thenAccept(success -> Platform.runLater(() -> {
                     log.info("CommunicationService.initialize() returned: {}", success);
                     if (success) {
                         log.info("Connected to Heronix-Talk server successfully");
+                        hideConnectionBanner();
                         updateConnectionStatus(true);
                         // Load news after successful connection
                         loadNewsFromServer();
                         // Check for pending invitations
                         refreshInvitationBadge();
+                        // Explicitly load channels after connection is confirmed
+                        log.info("Explicitly loading channels after successful connection...");
+                        communicationService.loadChannels()
+                                .thenAccept(loadedChannels -> Platform.runLater(() -> {
+                                    log.info("Channels loaded via explicit call: {} channels",
+                                            loadedChannels != null ? loadedChannels.size() : 0);
+                                    if (loadedChannels == null || loadedChannels.isEmpty()) {
+                                        showConnectionBanner("warning", "No Channels Available",
+                                                "Connected to server but no channels found. Default channels may not be created yet.", false);
+                                        updateChannelPlaceholder("No channels available",
+                                                "Server connected but no channels exist yet. Click + to create one or wait for server to initialize default channels.");
+                                    }
+                                }));
                     } else {
                         log.warn("Could not connect to Heronix-Talk, using offline mode");
+                        showConnectionBanner("error", "Server Unavailable",
+                                "Cannot connect to Heronix-Talk server (port 9680). Make sure the Talk server is running.", true);
+                        updateChannelPlaceholder("Server Offline",
+                                "Heronix-Talk server is not running. Start the server and click Retry.");
                         updateConnectionStatus(false);
                         loadSampleData();
                     }
-                }));
+                }))
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> {
+                        log.error("Exception during Talk initialization", ex);
+                        String errorDetail = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                        showConnectionBanner("error", "Connection Failed",
+                                "Error: " + errorDetail, true);
+                        updateChannelPlaceholder("Connection Error",
+                                "Failed to connect: " + errorDetail);
+                        updateConnectionStatus(false);
+                        loadSampleData();
+                    });
+                    return null;
+                });
+    }
+
+    /**
+     * Show the connection status banner with appropriate styling
+     * @param type "connecting", "warning", "error", or "success"
+     * @param title Main status message
+     * @param detail Detailed explanation
+     * @param showRetry Whether to show the retry button
+     */
+    private void showConnectionBanner(String type, String title, String detail, boolean showRetry) {
+        Platform.runLater(() -> {
+            if (connectionStatusBanner == null) return;
+
+            connectionStatusBanner.setVisible(true);
+            connectionStatusBanner.setManaged(true);
+
+            if (connectionStatusLabel != null) {
+                connectionStatusLabel.setText(title);
+            }
+            if (connectionStatusDetail != null) {
+                connectionStatusDetail.setText(detail);
+            }
+            if (retryConnectionBtn != null) {
+                retryConnectionBtn.setVisible(showRetry);
+                retryConnectionBtn.setManaged(showRetry);
+            }
+
+            // Style based on type
+            String bgColor, textColor, icon;
+            switch (type) {
+                case "connecting":
+                    bgColor = "#E3F2FD"; // Light blue
+                    textColor = "#1565C0";
+                    icon = "🔄";
+                    break;
+                case "warning":
+                    bgColor = "#FFF3CD"; // Light yellow
+                    textColor = "#856404";
+                    icon = "⚠";
+                    break;
+                case "error":
+                    bgColor = "#F8D7DA"; // Light red
+                    textColor = "#721C24";
+                    icon = "❌";
+                    break;
+                case "success":
+                    bgColor = "#D4EDDA"; // Light green
+                    textColor = "#155724";
+                    icon = "✓";
+                    break;
+                default:
+                    bgColor = "#E9ECEF";
+                    textColor = "#495057";
+                    icon = "ℹ";
+            }
+
+            connectionStatusBanner.setStyle("-fx-padding: 8 12; -fx-background-color: " + bgColor + "; -fx-background-radius: 6;");
+            if (connectionStatusIcon != null) {
+                connectionStatusIcon.setText(icon);
+            }
+            if (connectionStatusLabel != null) {
+                connectionStatusLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: " + textColor + ";");
+            }
+            if (connectionStatusDetail != null) {
+                connectionStatusDetail.setStyle("-fx-font-size: 10px; -fx-text-fill: " + textColor + ";");
+            }
+        });
+    }
+
+    /**
+     * Hide the connection status banner
+     */
+    private void hideConnectionBanner() {
+        Platform.runLater(() -> {
+            if (connectionStatusBanner != null) {
+                connectionStatusBanner.setVisible(false);
+                connectionStatusBanner.setManaged(false);
+            }
+        });
+    }
+
+    /**
+     * Update the channel list placeholder text
+     */
+    private void updateChannelPlaceholder(String title, String message) {
+        Platform.runLater(() -> {
+            if (channelPlaceholderTitle != null) {
+                channelPlaceholderTitle.setText(title);
+            }
+            if (channelPlaceholderMessage != null) {
+                channelPlaceholderMessage.setText(message);
+            }
+        });
+    }
+
+    /**
+     * Handle retry connection button click
+     */
+    @FXML
+    private void handleRetryConnection() {
+        log.info("Retry connection requested");
+        hideConnectionBanner();
+        updateChannelPlaceholder("Connecting...", "Attempting to reconnect to server...");
+        initializeTalkConnection();
     }
 
     private void setupConnectionStatus() {
