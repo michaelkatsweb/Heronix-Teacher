@@ -28,6 +28,8 @@ public class DismissalService {
     @Value("${sync.admin-server.url:http://localhost:9590}")
     private String serverUrl;
 
+    private final AdminApiClient adminApiClient;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -35,6 +37,10 @@ public class DismissalService {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    public DismissalService(AdminApiClient adminApiClient) {
+        this.adminApiClient = adminApiClient;
+    }
 
     public List<Map<String, Object>> getTodaysEvents() {
         return fetchList("/api/dismissal/today");
@@ -50,17 +56,18 @@ public class DismissalService {
 
     public Map<String, Object> getTodaysStats() {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + "/api/dismissal/today/stats"))
                     .header("Content-Type", "application/json")
                     .GET()
-                    .timeout(Duration.ofSeconds(10))
-                    .build();
+                    .timeout(Duration.ofSeconds(10));
+            addAuthHeader(builder);
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return objectMapper.readValue(response.body(), new TypeReference<>() {});
             }
+            log.warn("Dismissal stats returned HTTP {}", response.statusCode());
         } catch (Exception e) {
             log.error("Failed to fetch dismissal stats", e);
         }
@@ -73,20 +80,27 @@ public class DismissalService {
 
     private List<Map<String, Object>> fetchList(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .header("Content-Type", "application/json")
                     .GET()
-                    .timeout(Duration.ofSeconds(10))
-                    .build();
+                    .timeout(Duration.ofSeconds(10));
+            addAuthHeader(builder);
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
+            HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return objectMapper.readValue(response.body(), new TypeReference<>() {});
             }
+            log.warn("Dismissal fetch {} returned HTTP {}", path, response.statusCode());
         } catch (Exception e) {
             log.error("Failed to fetch dismissal data from {}", path, e);
         }
         return Collections.emptyList();
+    }
+
+    private void addAuthHeader(HttpRequest.Builder builder) {
+        if (adminApiClient.isAuthenticated()) {
+            builder.header("Authorization", "Bearer " + adminApiClient.getAuthToken());
+        }
     }
 }

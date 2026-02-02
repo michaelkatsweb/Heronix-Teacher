@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -227,6 +228,11 @@ public class DismissalBoardController {
     private void handleDismissNotification() {
         notificationBanner.setVisible(false);
         notificationBanner.setManaged(false);
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        stopAutoRefresh();
     }
 
     @FXML

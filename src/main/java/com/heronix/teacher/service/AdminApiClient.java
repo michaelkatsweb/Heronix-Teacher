@@ -627,6 +627,10 @@ public class AdminApiClient {
         this.authToken = token;
     }
 
+    public String getAuthToken() {
+        return authToken;
+    }
+
     public boolean isAuthenticated() {
         return authToken != null && !authToken.isEmpty();
     }
