@@ -37,7 +37,7 @@
                 <ComboBox fx:id="assignmentTypeCombo" prefWidth="Infinity" prefHeight="35"
                           promptText="Select type..."/>
                 <Label text="Examples: Homework, Quiz, Test, Exam, Project, Lab, etc."
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Assignment Category -->
@@ -50,7 +50,7 @@
                 <ComboBox fx:id="categoryCombo" prefWidth="Infinity" prefHeight="35"
                           promptText="Select category (optional)..."/>
                 <Label text="Categories enable weighted grading, drop lowest scores, and extra credit"
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Grading Style -->
@@ -59,7 +59,7 @@
                 <ComboBox fx:id="gradingStyleCombo" prefWidth="Infinity" prefHeight="35"
                           promptText="Select grading style..."/>
                 <Label text="Choose how grades will be entered: Letter (A-F), Points, or Percentage"
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Max Points -->
@@ -67,7 +67,7 @@
                 <Label fx:id="maxPointsLabel" text="Maximum Points *" styleClass="field-label"/>
                 <TextField fx:id="maxPointsField" promptText="e.g., 100" prefHeight="35"/>
                 <Label fx:id="maxPointsHelpText" text="Enter the maximum points possible for this assignment"
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Weight Percentage -->
@@ -80,7 +80,7 @@
                             styleClass="button-secondary" prefHeight="30"/>
                 </HBox>
                 <Label text="Leave blank for automatic weight based on assignment type"
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Due Date -->
@@ -95,7 +95,7 @@
                 <ComboBox fx:id="courseCombo" prefWidth="Infinity" prefHeight="35"
                           promptText="Select course..." editable="true"/>
                 <Label text="Select or enter course name"
-                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                       styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 
             <!-- Description -->

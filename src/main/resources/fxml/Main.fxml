@@ -59,7 +59,7 @@
             <HBox spacing="12" alignment="CENTER" style="-fx-padding: 4 8; -fx-background-color: rgba(0,0,0,0.1); -fx-background-radius: 5;">
                 <!-- SIS Server Status -->
                 <HBox spacing="4" alignment="CENTER">
-                    <Label fx:id="sisStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: gray;">
+                    <Label fx:id="sisStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;">
                         <tooltip><Tooltip text="EduScheduler-Pro SIS Connection"/></tooltip>
                     </Label>
                     <Label text="SIS" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
@@ -67,7 +67,7 @@
 
                 <!-- EdGames Server Status -->
                 <HBox spacing="4" alignment="CENTER">
-                    <Label fx:id="edgamesStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: gray;">
+                    <Label fx:id="edgamesStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;">
                         <tooltip><Tooltip text="EdGames Server Connection"/></tooltip>
                     </Label>
                     <Label text="Games" styleClass="text-secondary" style="-fx-font-size: 10px;"/>
@@ -75,7 +75,7 @@
 
                 <!-- Talk Server Status -->
                 <HBox spacing="4" alignment="CENTER">
-                    <Label fx:id="talkStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: gray;">
+                    <Label fx:id="talkStatusIcon" text="●" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;">
                         <tooltip><Tooltip text="Heronix-Talk Messaging Server"/></tooltip>
                     </Label>
                     <Label text="Talk" styleClass="text-secondary" style="-fx-font-size: 10px;"/>

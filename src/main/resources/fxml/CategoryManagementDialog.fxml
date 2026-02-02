@@ -80,7 +80,7 @@
                             <TextField fx:id="weightField" promptText="e.g., 40" prefHeight="35" prefWidth="100"/>
                             <Label text="%" styleClass="text-secondary"/>
                             <Label text="(Leave blank for equal weighting)"
-                                   style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                                   style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
                         </HBox>
                     </VBox>
 
@@ -90,7 +90,7 @@
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <Spinner fx:id="dropLowestSpinner" prefWidth="100" editable="true"/>
                             <Label text="Drop the lowest N assignment(s) from this category"
-                                   style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                                   style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
                         </HBox>
                     </VBox>
 
@@ -100,7 +100,7 @@
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <Spinner fx:id="dropHighestSpinner" prefWidth="100" editable="true"/>
                             <Label text="Drop the highest N assignment(s) from this category"
-                                   style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                                   style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
                         </HBox>
                     </VBox>
 
@@ -110,7 +110,7 @@
                         <Label text="Extra Credit Category" styleClass="field-label"/>
                     </HBox>
                     <Label text="Extra credit adds bonus points but doesn't affect points possible"
-                           style="-fx-font-size: 10px; -fx-text-fill: gray; -fx-padding: 0 0 0 30;"/>
+                           style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe; -fx-padding: 0 0 0 30;"/>
 
                     <!-- Display Order -->
                     <VBox spacing="5">
@@ -118,7 +118,7 @@
                         <HBox spacing="10" alignment="CENTER_LEFT">
                             <Spinner fx:id="displayOrderSpinner" prefWidth="100" editable="true"/>
                             <Label text="Lower numbers appear first"
-                                   style="-fx-font-size: 10px; -fx-text-fill: gray;"/>
+                                   style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
                         </HBox>
                     </VBox>
 

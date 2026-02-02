@@ -10,8 +10,8 @@
  * - Background Hover:   #40444b (Hover states)
  * - Background Active:  #42464d (Active/selected states)
  * - Text Primary:       #dcddde (Main text)
- * - Text Secondary:     #96989d (Muted text)
- * - Text Muted:         #72767d (Very muted text)
+ * - Text Secondary:     #b9bbbe (Muted text)
+ * - Text Muted:         #96989d (Very muted text)
  * - Accent Blue:        #5865f2 (Discord blurple - primary actions)
  * - Accent Green:       #3ba55c (Success, online status)
  * - Accent Yellow:      #faa61a (Warning, away status)
@@ -58,7 +58,7 @@
 /* Navigation Buttons */
 .nav-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 10 12;
     -fx-font-size: 13px;
@@ -206,7 +206,7 @@
 
 .button-icon {
     -fx-background-color: transparent;
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-background-radius: 4;
     -fx-cursor: hand;
 }
@@ -222,11 +222,11 @@
 }
 
 .text-secondary {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
 }
 
 .text-muted {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
 }
 
 .success-text {
@@ -316,7 +316,7 @@
 
 .table-view .column-header {
     -fx-background-color: #202225;
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-border-color: #40444b;
     -fx-font-weight: 600;
     -fx-font-size: 11px;
@@ -352,7 +352,7 @@
     -fx-border-radius: 4;
     -fx-background-radius: 4;
     -fx-padding: 8 12;
-    -fx-prompt-text-fill: #72767d;
+    -fx-prompt-text-fill: #96989d;
 }
 
 .text-field:focused {
@@ -595,7 +595,7 @@
 }
 
 .tab .tab-label {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
 }
 
 .tab:selected .tab-label {
@@ -660,7 +660,7 @@
 }
 
 .system-message {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-style: italic;
     -fx-font-size: 12px;
     -fx-padding: 4 0;
@@ -749,20 +749,20 @@
 }
 
 .message-timestamp {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 11px;
     -fx-padding: 0 0 0 8;
 }
 
 .message-edited-indicator {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 10px;
     -fx-font-style: italic;
 }
 
 /* Read Receipt Indicators */
 .read-receipt-indicator {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 10px;
     -fx-padding: 0 0 0 4;
 }
@@ -882,13 +882,13 @@
 }
 
 .reply-preview-content {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 12px;
 }
 
 .reply-cancel-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-padding: 4 8;
     -fx-cursor: hand;
     -fx-background-radius: 4;
@@ -934,7 +934,7 @@
 }
 
 .chat-header-subtitle {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 12px;
 }
 
@@ -973,7 +973,7 @@
 .chat-input-field {
     -fx-background-color: #40444b;
     -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
+    -fx-prompt-text-fill: #96989d;
     -fx-border-color: transparent;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
@@ -1006,7 +1006,7 @@
 
 .chat-send-button:disabled {
     -fx-background-color: #4f545c;
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
 }
 
 .chat-attachment-button {
@@ -1043,13 +1043,13 @@
 }
 
 .typing-indicator-text {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 12px;
     -fx-font-style: normal;
 }
 
 .typing-dots {
-    -fx-fill: #96989d;
+    -fx-fill: #b9bbbe;
 }
 
 /* ===== CHANNEL LIST STYLES ===== */
@@ -1059,7 +1059,7 @@
 }
 
 .channel-list-header-text {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
     -fx-text-transform: uppercase;
@@ -1067,7 +1067,7 @@
 
 .channel-list-add-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-padding: 2 6;
     -fx-background-radius: 4;
     -fx-cursor: hand;
@@ -1096,7 +1096,7 @@
 }
 
 .channel-item-name {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 14px;
     -fx-font-weight: 500;
 }
@@ -1125,7 +1125,7 @@
 }
 
 .channel-type-icon {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 18px;
 }
 
@@ -1144,7 +1144,7 @@
 }
 
 .user-list-header-text {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 11px;
     -fx-font-weight: 700;
 }
@@ -1177,7 +1177,7 @@
 }
 
 .user-name {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 14px;
     -fx-font-weight: 500;
 }
@@ -1217,7 +1217,7 @@
 }
 
 .user-role-badge-text {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 11px;
 }
 
@@ -1260,12 +1260,12 @@
 }
 
 .news-item-content {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 13px;
 }
 
 .news-item-date {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 11px;
 }
 
@@ -1459,12 +1459,12 @@
 .search-field {
     -fx-background-color: transparent;
     -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
+    -fx-prompt-text-fill: #96989d;
     -fx-padding: 8 0;
 }
 
 .search-icon {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
 }
 
 .search-result-item {
@@ -1519,7 +1519,7 @@
 }
 
 .attachment-size {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 11px;
 }
 
@@ -1575,7 +1575,7 @@
 
 /* ===== READ RECEIPT STYLES ===== */
 .read-receipt-indicator {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 10px;
 }
 
@@ -1622,7 +1622,7 @@
 }
 
 .empty-state-message {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 14px;
     -fx-text-alignment: center;
 }
@@ -1699,12 +1699,12 @@
 }
 
 .invitation-inviter {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 13px;
 }
 
 .invitation-message {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
     -fx-font-size: 13px;
     -fx-font-style: italic;
 }
@@ -1978,12 +1978,12 @@
 }
 
 .user-name-offline {
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
 }
 
 .user-role-label {
     -fx-font-size: 11px;
-    -fx-text-fill: #72767d;
+    -fx-text-fill: #96989d;
 }
 
 /* Status Badge */
@@ -2034,7 +2034,7 @@
 .my-status-header {
     -fx-font-size: 11px;
     -fx-font-weight: 700;
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
 }
 
 .status-menu-button {
@@ -2064,7 +2064,7 @@
     -fx-padding: 8 12;
     -fx-font-size: 13px;
     -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
+    -fx-prompt-text-fill: #96989d;
 }
 
 .status-message-field:focused {
@@ -2102,7 +2102,7 @@
     -fx-padding: 4 10;
     -fx-font-size: 12px;
     -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
+    -fx-prompt-text-fill: #96989d;
 }
 
 .status-message-field-compact:focused {
@@ -2184,7 +2184,7 @@
 }
 
 .emoji-picker-category {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 11px;
     -fx-font-weight: 600;
 }
@@ -2225,7 +2225,7 @@
 }
 
 .settings-tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
-    -fx-text-fill: #96989d;
+    -fx-text-fill: #b9bbbe;
     -fx-font-size: 13px;
 }
 
