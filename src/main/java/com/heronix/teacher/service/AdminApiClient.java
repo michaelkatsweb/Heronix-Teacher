@@ -44,7 +44,7 @@ public class AdminApiClient {
     // ========================================================================
 
     /**
-     * Authenticate teacher and get JWT token
+     * Authenticate teacher and get JWT token from SIS Server
      */
     public boolean authenticate(String employeeId, String password) {
         try {
@@ -52,7 +52,7 @@ public class AdminApiClient {
                     new AuthRequest(employeeId, password));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + "/api/teacher/auth/login"))
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .timeout(Duration.ofSeconds(10))
@@ -62,20 +62,21 @@ public class AdminApiClient {
                     HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                AuthResponse authResponse = objectMapper.readValue(
-                        response.body(), AuthResponse.class);
-                this.authToken = authResponse.getToken();
-                this.teacherId = authResponse.getTeacherId();
-                this.teacherName = authResponse.getTeacherName();
-                log.info("Authentication successful for teacher: {} (ID: {})", employeeId, teacherId);
-                return true;
+                // Server returns: {"data":{"accessToken":"...","userId":"T101",...},"success":true}
+                var root = objectMapper.readTree(response.body());
+                var data = root.path("data");
+                this.authToken = data.path("accessToken").asText(null);
+                String userId = data.path("userId").asText(null);
+                this.teacherName = userId; // employeeId as fallback name
+                log.info("Server authentication successful for teacher: {}", employeeId);
+                return this.authToken != null;
             } else {
-                log.error("Authentication failed: {}", response.statusCode());
+                log.error("Server authentication failed: {}", response.statusCode());
                 return false;
             }
 
         } catch (Exception e) {
-            log.error("Error during authentication", e);
+            log.error("Error during server authentication", e);
             return false;
         }
     }
@@ -663,11 +664,11 @@ public class AdminApiClient {
     // ========================================================================
 
     private static class AuthRequest {
-        public String employeeId;
+        public String username;
         public String password;
 
         public AuthRequest(String employeeId, String password) {
-            this.employeeId = employeeId;
+            this.username = employeeId;
             this.password = password;
         }
     }

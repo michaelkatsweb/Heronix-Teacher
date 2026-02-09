@@ -1,6 +1,7 @@
 package com.heronix.teacher.ui.controller;
 
 import com.heronix.teacher.model.domain.Teacher;
+import com.heronix.teacher.service.AdminApiClient;
 import com.heronix.teacher.service.AuthenticationService;
 import com.heronix.teacher.service.SessionManager;
 import javafx.application.Platform;
@@ -33,6 +34,7 @@ public class LoginController {
     private final AuthenticationService authenticationService;
     private final SessionManager sessionManager;
     private final ConfigurableApplicationContext springContext;
+    private final AdminApiClient adminApiClient;
 
     @FXML
     private TextField employeeIdField;
@@ -109,6 +111,32 @@ public class LoginController {
 
                     // Set session with password for Talk authentication
                     sessionManager.login(teacher, password);
+
+                    // Authenticate with SIS Server to get JWT for API calls
+                    try {
+                        boolean serverAuth = adminApiClient.authenticate(
+                                employeeId.trim(), password);
+                        if (serverAuth) {
+                            log.info("SIS Server authentication successful");
+                            // Fetch server-side teacher ID from schedule endpoint
+                            try {
+                                var schedule = adminApiClient.getTeacherSchedule(employeeId.trim());
+                                if (schedule != null && schedule.getTeacherId() != null) {
+                                    adminApiClient.setTeacherId(schedule.getTeacherId());
+                                    log.info("Server teacher ID: {}", schedule.getTeacherId());
+                                } else {
+                                    adminApiClient.setTeacherId(teacher.getId());
+                                }
+                            } catch (Exception ex) {
+                                log.warn("Could not fetch server teacher ID, using local: {}", ex.getMessage());
+                                adminApiClient.setTeacherId(teacher.getId());
+                            }
+                        } else {
+                            log.warn("SIS Server authentication failed - API features will be limited");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Could not authenticate with SIS Server: {}", e.getMessage());
+                    }
 
                     // Navigate to main application
                     navigateToMainApplication();

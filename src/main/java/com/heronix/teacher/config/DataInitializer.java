@@ -57,6 +57,13 @@ public class DataInitializer {
                 createTestTeacher("T005", "David", "Martinez", "david.martinez@school.edu",
                                 "password123", "Physical Education");
 
+                // Test-day teachers (match SIS Server test-day data generator)
+                createTestTeacher("T101", "Alice", "Thompson", "athompson@heronix.edu",
+                                "password123", "Mathematics");
+
+                createTestTeacher("T102", "Bob", "Richardson", "brichardson@heronix.edu",
+                                "password123", "English");
+
                 log.info("Test data initialization completed successfully");
 
             } catch (Exception e) {
