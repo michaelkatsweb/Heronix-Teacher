@@ -130,6 +130,7 @@ public class AutoSyncService {
     /**
      * Perform sync operation
      */
+    @Transactional
     public void performSync() {
         if (!syncEnabled || !isRunning) {
             return;
@@ -182,7 +183,6 @@ public class AutoSyncService {
     /**
      * Sync students
      */
-    @Transactional
     private int syncStudents() {
         List<Student> pendingStudents = studentRepository.findNeedingSync();
 
@@ -210,7 +210,6 @@ public class AutoSyncService {
     /**
      * Sync assignment categories
      */
-    @Transactional
     private int syncCategories() {
         List<AssignmentCategory> pendingCategories = categoryRepository.findNeedingSync();
 
@@ -238,7 +237,6 @@ public class AutoSyncService {
     /**
      * Sync assignments
      */
-    @Transactional
     private int syncAssignments() {
         List<Assignment> pendingAssignments = assignmentRepository.findNeedingSync();
 
@@ -266,7 +264,6 @@ public class AutoSyncService {
     /**
      * Sync grades
      */
-    @Transactional
     private int syncGrades() {
         List<Grade> pendingGrades = gradeRepository.findNeedingSync();
 
@@ -294,7 +291,6 @@ public class AutoSyncService {
     /**
      * Sync attendance
      */
-    @Transactional
     private int syncAttendance() {
         List<Attendance> pendingAttendance = attendanceRepository.findNeedingSync();
 
@@ -322,7 +318,6 @@ public class AutoSyncService {
     /**
      * Sync hall passes
      */
-    @Transactional
     private int syncHallPasses() {
         List<HallPass> pendingHallPasses = hallPassRepository.findNeedingSync();
 
@@ -377,6 +372,7 @@ public class AutoSyncService {
     /**
      * Trigger immediate sync (manual sync)
      */
+    @Transactional
     public void syncNow() {
         log.info("Manual sync triggered");
         performSync();

@@ -30,14 +30,14 @@ public class Grade {
     /**
      * Student reference
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
     /**
      * Assignment reference
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "assignment_id", nullable = false)
     private Assignment assignment;
 

@@ -136,6 +136,7 @@ public class AssignmentCategory {
     /**
      * Assignments in this category
      */
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Assignment> assignments = new ArrayList<>();

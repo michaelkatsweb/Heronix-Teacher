@@ -75,6 +75,7 @@ public class Assignment {
     /**
      * Assignment Category (for weighted grading)
      */
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private AssignmentCategory category;

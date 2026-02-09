@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class StudentEnrollmentCache {
 
-    private final Map<Integer, ClassRosterDTO> periodRosters = new ConcurrentHashMap<>();
+    private volatile Map<Integer, ClassRosterDTO> periodRosters = new ConcurrentHashMap<>();
 
     public void updateRosters(Map<Integer, ClassRosterDTO> rosters) {
-        periodRosters.clear();
-        periodRosters.putAll(rosters);
+        periodRosters = new ConcurrentHashMap<>(rosters);
         log.info("Enrollment cache updated with {} period rosters", rosters.size());
     }
 
@@ -59,9 +58,16 @@ public class StudentEnrollmentCache {
         if (label.startsWith("Homeroom")) return 0;
         if (label.startsWith("Period ")) {
             try {
-                String numStr = label.substring("Period ".length(), label.indexOf(" - "));
+                int dashIdx = label.indexOf(" - ");
+                String numStr;
+                if (dashIdx >= 0) {
+                    numStr = label.substring("Period ".length(), dashIdx);
+                } else {
+                    numStr = label.substring("Period ".length());
+                }
                 return Integer.parseInt(numStr.trim());
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
+                log.warn("Could not parse period number from label: {}", label);
                 return null;
             }
         }
