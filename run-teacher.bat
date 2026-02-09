@@ -7,6 +7,9 @@ echo.
 
 cd /d "%~dp0"
 
+call ..\set-java-home.bat
+if %ERRORLEVEL% neq 0 ( pause & exit /b 1 )
+
 echo [1/3] Cleaning project...
 call mvn clean -q
 if %ERRORLEVEL% NEQ 0 (

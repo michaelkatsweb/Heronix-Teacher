@@ -3,6 +3,8 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.text.Text?>
 <?import java.lang.String?>
 
@@ -13,7 +15,7 @@
             prefWidth="800" prefHeight="600">
 
     <stylesheets>
-        <String fx:value="@../css/light-theme.css"/>
+        <String fx:value="/css/light-theme.css"/>
     </stylesheets>
 
     <!-- Center: Login Form -->
@@ -25,7 +27,11 @@
 
             <!-- Logo/Title Area -->
             <VBox alignment="CENTER" spacing="10">
-                <Text text="Heronix-Teacher" styleClass="login-title"/>
+                <ImageView fitHeight="80" preserveRatio="true">
+                    <image>
+                        <Image url="@../images/logo-horizontal.png"/>
+                    </image>
+                </ImageView>
                 <Text text="Teacher Portal" styleClass="login-subtitle"/>
             </VBox>
 
@@ -91,7 +97,7 @@
                     <Insets top="20"/>
                 </padding>
                 <Label text="Version 1.0.0" styleClass="version-label"/>
-                <Label text="© 2025 EduScheduler" styleClass="copyright-label"/>
+                <Label text="© 2026 Heronix Education Systems LLC" styleClass="copyright-label"/>
             </VBox>
 
         </VBox>
