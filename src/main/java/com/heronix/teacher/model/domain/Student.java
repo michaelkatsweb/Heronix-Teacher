@@ -107,6 +107,12 @@ public class Student {
     private String barcode;
 
     /**
+     * Server-side ID from SIS Server (for API callbacks)
+     */
+    @Column(name = "server_id")
+    private Long serverId;
+
+    /**
      * Sync status: synced, pending, conflict
      */
     @Column(name = "sync_status")

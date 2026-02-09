@@ -3,10 +3,12 @@ package com.heronix.teacher.ui.controller;
 import com.heronix.teacher.model.domain.Attendance;
 import com.heronix.teacher.model.domain.Student;
 import com.heronix.teacher.model.dto.ClassRosterDTO;
+import com.heronix.teacher.repository.StudentRepository;
 import com.heronix.teacher.service.AdminApiClient;
 import com.heronix.teacher.service.AttendanceService;
 import com.heronix.teacher.service.GradebookService;
 import com.heronix.teacher.service.SessionManager;
+import com.heronix.teacher.service.StudentEnrollmentCache;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -58,6 +60,8 @@ public class AttendanceController {
     private final GradebookService gradebookService;
     private final AdminApiClient adminApiClient;
     private final SessionManager sessionManager;
+    private final StudentRepository studentRepository;
+    private final StudentEnrollmentCache studentEnrollmentCache;
 
     // FXML elements from Attendance.fxml
     @FXML private Label dateLabel;
@@ -411,6 +415,9 @@ public class AttendanceController {
                 loadRostersLegacy(employeeId);
             }
 
+            // Update shared enrollment cache for Gradebook/Assignment dialogs
+            studentEnrollmentCache.updateRosters(periodRosters);
+
             // Load each period's data
             for (int period = 0; period <= 7; period++) {
                 loadPeriodData(period);
@@ -579,30 +586,70 @@ public class AttendanceController {
     }
 
     /**
-     * Convert RosterStudentDTOs from server to local Student entities
+     * Convert RosterStudentDTOs from server to local Student entities.
+     * Persists students to the local DB (upsert) so attendance marking can find them.
      */
     private List<Student> convertRosterStudentsToLocal(List<ClassRosterDTO.RosterStudentDTO> rosterStudents) {
         List<Student> students = new java.util.ArrayList<>();
 
         for (ClassRosterDTO.RosterStudentDTO rosterStudent : rosterStudents) {
-            // Create a Student entity from the DTO
-            // Note: This creates a transient entity - if we need to persist attendance,
-            // we should look up the actual Student entity from the database
-            Student student = new Student();
-            student.setId(rosterStudent.getStudentId());
-            student.setStudentId(rosterStudent.getStudentNumber());
-            student.setFirstName(rosterStudent.getFirstName());
-            student.setLastName(rosterStudent.getLastName());
-            student.setEmail(rosterStudent.getEmail());
+            String studentNumber = rosterStudent.getStudentNumber();
+            if (studentNumber == null || studentNumber.isEmpty()) {
+                log.warn("Skipping roster student with no student number");
+                continue;
+            }
 
-            // Convert gradeLevel from String to Integer
-            String gradeStr = rosterStudent.getGradeLevel();
-            if (gradeStr != null && !gradeStr.isEmpty()) {
-                try {
-                    student.setGradeLevel(Integer.parseInt(gradeStr));
-                } catch (NumberFormatException e) {
-                    log.warn("Could not parse grade level: {}", gradeStr);
+            // Look up by studentId string (e.g., "S9001")
+            Optional<Student> existingOpt = studentRepository.findByStudentId(studentNumber);
+
+            Student student;
+            boolean dirty = false;
+
+            if (existingOpt.isPresent()) {
+                // Update existing student if fields changed
+                student = existingOpt.get();
+                if (rosterStudent.getFirstName() != null && !rosterStudent.getFirstName().equals(student.getFirstName())) {
+                    student.setFirstName(rosterStudent.getFirstName());
+                    dirty = true;
                 }
+                if (rosterStudent.getLastName() != null && !rosterStudent.getLastName().equals(student.getLastName())) {
+                    student.setLastName(rosterStudent.getLastName());
+                    dirty = true;
+                }
+                if (rosterStudent.getEmail() != null && !rosterStudent.getEmail().equals(student.getEmail())) {
+                    student.setEmail(rosterStudent.getEmail());
+                    dirty = true;
+                }
+                if (rosterStudent.getStudentId() != null && !rosterStudent.getStudentId().equals(student.getServerId())) {
+                    student.setServerId(rosterStudent.getStudentId());
+                    dirty = true;
+                }
+                if (dirty) {
+                    student = studentRepository.save(student);
+                }
+            } else {
+                // Create new student — let H2 auto-generate the local ID
+                student = new Student();
+                student.setStudentId(studentNumber);
+                student.setFirstName(rosterStudent.getFirstName());
+                student.setLastName(rosterStudent.getLastName());
+                student.setEmail(rosterStudent.getEmail());
+                student.setServerId(rosterStudent.getStudentId());
+                student.setActive(true);
+                student.setSyncStatus("synced");
+
+                // Convert gradeLevel from String to Integer
+                String gradeStr = rosterStudent.getGradeLevel();
+                if (gradeStr != null && !gradeStr.isEmpty()) {
+                    try {
+                        student.setGradeLevel(Integer.parseInt(gradeStr));
+                    } catch (NumberFormatException e) {
+                        log.warn("Could not parse grade level: {}", gradeStr);
+                    }
+                }
+
+                student = studentRepository.save(student);
+                log.debug("Persisted new student: {} ({})", student.getFullName(), studentNumber);
             }
 
             students.add(student);
@@ -652,6 +699,52 @@ public class AttendanceController {
                 totalPresent, totalAbsent, totalTardy));
     }
 
+    // === Server Submission ===
+
+    /**
+     * Submit attendance records to SIS Server (fire-and-forget).
+     */
+    private void submitAttendanceToServer(int period, List<Map<String, Object>> records) {
+        ClassRosterDTO roster = periodRosters.get(period);
+        if (roster == null || roster.getSectionId() == null) {
+            log.debug("No section ID for period {} - skipping server submission", period);
+            return;
+        }
+        new Thread(() -> {
+            try {
+                adminApiClient.submitBulkAttendance(
+                        roster.getSectionId(),
+                        currentDate.toString(),
+                        period,
+                        sessionManager.getCurrentEmployeeId(),
+                        records);
+                log.info("Submitted attendance to server for period {}", period);
+            } catch (Exception e) {
+                log.warn("Failed to submit attendance to server for period {}: {}", period, e.getMessage());
+            }
+        }).start();
+    }
+
+    /**
+     * Build a single attendance record map for server submission.
+     */
+    private Map<String, Object> buildServerRecord(Long serverId, String status, String notes) {
+        Map<String, Object> record = new HashMap<>();
+        record.put("studentId", serverId);
+        record.put("status", status);
+        if (notes != null) record.put("notes", notes);
+        return record;
+    }
+
+    /**
+     * Look up the server ID for a local student.
+     */
+    private Long getServerIdForStudent(Long localStudentId) {
+        return studentRepository.findById(localStudentId)
+                .map(Student::getServerId)
+                .orElse(null);
+    }
+
     // === Action Handlers ===
 
     /**
@@ -663,6 +756,12 @@ public class AttendanceController {
             loadPeriodData(period);
             updateSummary();
             statusLabel.setText("Student marked present for Period " + period);
+
+            // Submit to server
+            Long serverId = getServerIdForStudent(studentId);
+            if (serverId != null) {
+                submitAttendanceToServer(period, List.of(buildServerRecord(serverId, "PRESENT", null)));
+            }
         } catch (Exception e) {
             log.error("Failed to mark student present", e);
             showError("Error", "Failed to mark student present: " + e.getMessage());
@@ -684,6 +783,12 @@ public class AttendanceController {
                 loadPeriodData(period);
                 updateSummary();
                 statusLabel.setText("Student marked absent for Period " + period);
+
+                // Submit to server
+                Long serverId = getServerIdForStudent(studentId);
+                if (serverId != null) {
+                    submitAttendanceToServer(period, List.of(buildServerRecord(serverId, "ABSENT", reason)));
+                }
             } catch (Exception e) {
                 log.error("Failed to mark student absent", e);
                 showError("Error", "Failed to mark student absent: " + e.getMessage());
@@ -707,6 +812,12 @@ public class AttendanceController {
                 loadPeriodData(period);
                 updateSummary();
                 statusLabel.setText("Student marked tardy for Period " + period);
+
+                // Submit to server
+                Long serverId = getServerIdForStudent(studentId);
+                if (serverId != null) {
+                    submitAttendanceToServer(period, List.of(buildServerRecord(serverId, "TARDY", "Arrived late")));
+                }
             } catch (Exception e) {
                 log.error("Failed to mark student tardy", e);
                 showError("Error", "Failed to mark student tardy: " + e.getMessage());
@@ -751,12 +862,19 @@ public class AttendanceController {
             if (response == ButtonType.OK) {
                 ObservableList<AttendanceRow> data = periodData.get(period);
                 int marked = 0;
+                List<Map<String, Object>> serverRecords = new java.util.ArrayList<>();
 
                 for (AttendanceRow row : data) {
                     if ("UNMARKED".equals(row.getStatus())) {
                         try {
                             attendanceService.markPresentForPeriod(row.getStudentId(), currentDate, period);
                             marked++;
+
+                            // Collect server records for bulk submission
+                            Long serverId = getServerIdForStudent(row.getStudentId());
+                            if (serverId != null) {
+                                serverRecords.add(buildServerRecord(serverId, "PRESENT", null));
+                            }
                         } catch (Exception e) {
                             log.error("Failed to mark student present: {}", e.getMessage());
                         }
@@ -766,6 +884,11 @@ public class AttendanceController {
                 statusLabel.setText("Marked " + marked + " students present for " + periodName);
                 loadPeriodData(period);
                 updateSummary();
+
+                // Submit all records to server in one batch
+                if (!serverRecords.isEmpty()) {
+                    submitAttendanceToServer(period, serverRecords);
+                }
             }
         });
     }

@@ -4,6 +4,7 @@ import com.heronix.teacher.model.domain.Assignment;
 import com.heronix.teacher.model.domain.Grade;
 import com.heronix.teacher.model.domain.Student;
 import com.heronix.teacher.service.GradebookService;
+import com.heronix.teacher.service.StudentEnrollmentCache;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -48,6 +49,7 @@ import javafx.stage.FileChooser;
 public class GradebookController {
 
     private final GradebookService gradebookService;
+    private final StudentEnrollmentCache studentEnrollmentCache;
 
     // Filter controls
     @FXML private TextField searchField;
@@ -364,7 +366,7 @@ public class GradebookController {
     }
 
     /**
-     * Filter by course
+     * Filter by course (or period-course label)
      */
     private void filterByCourse() {
         String selectedCourse = courseFilterCombo.getValue();
@@ -372,22 +374,41 @@ public class GradebookController {
 
         try {
             if (selectedCourse == null || selectedCourse.equals("All Courses")) {
-                // Show all students
+                // Show all students and assignments
                 loadStudents();
+                loadAssignments();
             } else {
-                // Filter students by course
-                List<Student> allStudents = gradebookService.getAllActiveStudents();
+                // Check if this is a period label (e.g., "Period 1 - Algebra I (MATH101)")
+                Integer period = StudentEnrollmentCache.parsePeriodFromLabel(selectedCourse);
 
-                // Get students enrolled in this course
-                List<Student> filteredStudents = gradebookService.getStudentsByCourse(selectedCourse);
+                if (period != null) {
+                    // Load students from enrollment cache for this period
+                    List<Student> periodStudents = gradebookService.getStudentsForPeriod(period);
+                    students.clear();
+                    students.addAll(periodStudents);
 
-                students.clear();
-                students.addAll(filteredStudents);
+                    // Load assignments for this period and rebuild columns
+                    gradebookTable.getColumns().removeAll(assignmentColumns);
+                    assignmentColumns.clear();
+                    assignments = gradebookService.getAssignmentsForPeriod(period);
+                    for (Assignment assignment : assignments) {
+                        TableColumn<Student, String> column = createAssignmentColumn(assignment);
+                        assignmentColumns.add(column);
+                        gradebookTable.getColumns().add(column);
+                    }
 
-                log.info("Course filter '{}' applied - showing {} students",
-                        selectedCourse, filteredStudents.size());
+                    log.info("Period {} filter applied - showing {} students, {} assignments",
+                            period, periodStudents.size(), assignments.size());
+                } else {
+                    // Legacy course name filter
+                    List<Student> filteredStudents = gradebookService.getStudentsByCourse(selectedCourse);
+                    students.clear();
+                    students.addAll(filteredStudents);
 
-                // Update statistics
+                    log.info("Course filter '{}' applied - showing {} students",
+                            selectedCourse, filteredStudents.size());
+                }
+
                 updateStatistics();
             }
         } catch (Exception e) {
@@ -435,6 +456,7 @@ public class GradebookController {
 
             AssignmentDialogController controller = loader.getController();
             controller.setGradebookService(gradebookService);
+            controller.setCourseOptions(studentEnrollmentCache.getPeriodCourseLabels());
 
             javafx.stage.Stage dialog = new javafx.stage.Stage();
             dialog.setTitle("Create New Assignment");
@@ -480,6 +502,7 @@ public class GradebookController {
 
                 AssignmentDialogController controller = loader.getController();
                 controller.setGradebookService(gradebookService);
+                controller.setCourseOptions(studentEnrollmentCache.getPeriodCourseLabels());
                 controller.setAssignment(selectedAssignment);
 
                 javafx.stage.Stage dialog = new javafx.stage.Stage();

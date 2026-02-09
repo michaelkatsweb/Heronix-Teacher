@@ -4,6 +4,7 @@ import com.heronix.teacher.model.domain.Assignment;
 import com.heronix.teacher.model.domain.AssignmentCategory;
 import com.heronix.teacher.model.domain.Grade;
 import com.heronix.teacher.model.domain.Student;
+import com.heronix.teacher.model.dto.ClassRosterDTO;
 import com.heronix.teacher.repository.AssignmentCategoryRepository;
 import com.heronix.teacher.repository.AssignmentRepository;
 import com.heronix.teacher.repository.GradeRepository;
@@ -38,6 +39,7 @@ public class GradebookService {
     private final AssignmentRepository assignmentRepository;
     private final AssignmentCategoryRepository categoryRepository;
     private final GradeRepository gradeRepository;
+    private final StudentEnrollmentCache studentEnrollmentCache;
 
     // ==================== Student Management ====================
 
@@ -461,16 +463,34 @@ public class GradebookService {
     // ==================== Teacher Dashboard Support ====================
 
     /**
-     * Get list of courses taught by current teacher
-     * Returns distinct course names from assignments
+     * Get list of courses taught by current teacher.
+     * Includes period-course labels from enrollment cache (e.g., "Period 1 - Algebra I (MATH101)")
+     * plus any distinct course names from existing assignments.
      */
     public List<String> getTeacherCourses() {
-        return assignmentRepository.findAll().stream()
+        List<String> courses = new ArrayList<>();
+
+        // Add period-course labels from enrollment cache
+        List<String> periodLabels = studentEnrollmentCache.getPeriodCourseLabels();
+        if (periodLabels != null && !periodLabels.isEmpty()) {
+            courses.addAll(periodLabels);
+        }
+
+        // Also add distinct course names from assignments (legacy support)
+        List<String> assignmentCourses = assignmentRepository.findAll().stream()
             .map(Assignment::getCourseName)
             .filter(Objects::nonNull)
             .distinct()
             .sorted()
             .collect(Collectors.toList());
+
+        for (String course : assignmentCourses) {
+            if (!courses.contains(course)) {
+                courses.add(course);
+            }
+        }
+
+        return courses;
     }
 
     /**
@@ -503,6 +523,33 @@ public class GradebookService {
         }
 
         return new ArrayList<>(students);
+    }
+
+    /**
+     * Get students for a specific period from the enrollment cache.
+     * Looks up local persisted students by studentId string.
+     */
+    public List<Student> getStudentsForPeriod(int period) {
+        ClassRosterDTO roster = studentEnrollmentCache.getRoster(period);
+        if (roster == null || roster.getStudents() == null) {
+            return new ArrayList<>();
+        }
+
+        List<Student> students = new ArrayList<>();
+        for (ClassRosterDTO.RosterStudentDTO rosterStudent : roster.getStudents()) {
+            String studentNumber = rosterStudent.getStudentNumber();
+            if (studentNumber != null) {
+                studentRepository.findByStudentId(studentNumber).ifPresent(students::add);
+            }
+        }
+        return students;
+    }
+
+    /**
+     * Get active assignments for a specific period.
+     */
+    public List<Assignment> getAssignmentsForPeriod(int period) {
+        return assignmentRepository.findByPeriodNumberAndActiveTrue(period);
     }
 
     /**

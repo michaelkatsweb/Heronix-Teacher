@@ -47,6 +47,12 @@ public class Assignment {
     private String courseName;
 
     /**
+     * Period number this assignment belongs to (from enrollment schedule)
+     */
+    @Column(name = "period_number")
+    private Integer periodNumber;
+
+    /**
      * Assignment name
      */
     @Column(name = "name", nullable = false)

@@ -89,12 +89,12 @@
                 <DatePicker fx:id="dueDatePicker" prefHeight="35" promptText="Select due date..."/>
             </VBox>
 
-            <!-- Course -->
+            <!-- Period / Course -->
             <VBox spacing="5">
-                <Label text="Course" styleClass="field-label"/>
+                <Label text="Period / Course" styleClass="field-label"/>
                 <ComboBox fx:id="courseCombo" prefWidth="Infinity" prefHeight="35"
-                          promptText="Select course..." editable="true"/>
-                <Label text="Select or enter course name"
+                          promptText="Select period and course..." editable="true"/>
+                <Label text="Select the period and course for this assignment"
                        styleClass="help-text" style="-fx-font-size: 10px; -fx-text-fill: #b9bbbe;"/>
             </VBox>
 

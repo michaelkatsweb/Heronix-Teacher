@@ -5,6 +5,7 @@ import com.heronix.teacher.model.domain.AssignmentCategory;
 import com.heronix.teacher.model.enums.AssignmentType;
 import com.heronix.teacher.model.enums.GradingStyle;
 import com.heronix.teacher.service.GradebookService;
+import com.heronix.teacher.service.StudentEnrollmentCache;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -39,6 +40,7 @@ public class AssignmentDialogController {
     private Assignment assignment;
     private boolean editMode = false;
     private boolean saved = false;
+    private List<String> periodCourseLabels;
 
     // FXML Controls
     @FXML private Label titleLabel;
@@ -150,13 +152,18 @@ public class AssignmentDialogController {
     }
 
     /**
-     * Setup course combo box
+     * Setup course combo box with period-course labels if available
      */
     private void setupCourseCombo() {
-        courseCombo.getItems().addAll(
-            "Math", "English", "Science", "History", "Art", "Music",
-            "Physical Education", "Computer Science", "Spanish", "French"
-        );
+        courseCombo.getItems().clear();
+        if (periodCourseLabels != null && !periodCourseLabels.isEmpty()) {
+            courseCombo.getItems().addAll(periodCourseLabels);
+        } else {
+            courseCombo.getItems().addAll(
+                "Math", "English", "Science", "History", "Art", "Music",
+                "Physical Education", "Computer Science", "Spanish", "French"
+            );
+        }
         courseCombo.setEditable(true);
     }
 
@@ -282,6 +289,18 @@ public class AssignmentDialogController {
     public void setGradebookService(GradebookService service) {
         this.gradebookService = service;
         loadCategories(); // Reload categories when service is set
+    }
+
+    /**
+     * Set course options from enrollment cache period-course labels.
+     * Must be called after the FXML is loaded (after initialize()).
+     */
+    public void setCourseOptions(List<String> labels) {
+        this.periodCourseLabels = labels;
+        if (labels != null && !labels.isEmpty()) {
+            courseCombo.getItems().clear();
+            courseCombo.getItems().addAll(labels);
+        }
     }
 
     /**
@@ -411,7 +430,29 @@ public class AssignmentDialogController {
             }
 
             assignment.setDueDate(dueDatePicker.getValue());
-            assignment.setCourseName(courseCombo.getValue());
+
+            // Extract period number and course name from combo selection
+            String courseSelection = courseCombo.getValue();
+            Integer periodNumber = StudentEnrollmentCache.parsePeriodFromLabel(courseSelection);
+            if (periodNumber != null) {
+                assignment.setPeriodNumber(periodNumber);
+                // Extract just the course name part for display
+                int dashIdx = courseSelection.indexOf(" - ");
+                if (dashIdx >= 0) {
+                    String courseNamePart = courseSelection.substring(dashIdx + 3);
+                    // Strip trailing course code like " (MATH101)"
+                    int parenIdx = courseNamePart.lastIndexOf(" (");
+                    if (parenIdx >= 0) {
+                        courseNamePart = courseNamePart.substring(0, parenIdx);
+                    }
+                    assignment.setCourseName(courseNamePart);
+                } else {
+                    assignment.setCourseName(courseSelection);
+                }
+            } else {
+                assignment.setCourseName(courseSelection);
+            }
+
             assignment.setDescription(descriptionArea.getText());
             assignment.setActive(activeCheckbox.isSelected());
 

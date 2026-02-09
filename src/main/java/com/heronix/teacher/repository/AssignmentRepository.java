@@ -60,6 +60,11 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByCourseNameAndActiveTrue(String courseName);
 
     /**
+     * Find assignments by period number
+     */
+    List<Assignment> findByPeriodNumberAndActiveTrue(Integer periodNumber);
+
+    /**
      * Count assignments by course
      */
     long countByCourseIdAndActiveTrue(Long courseId);
