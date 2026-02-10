@@ -632,7 +632,7 @@ public class MainController {
         serverGrid.setVgap(10);
 
         serverGrid.add(new Label("SIS API URL:"), 0, 0);
-        TextField sisUrlField = new TextField("http://localhost:9580");
+        TextField sisUrlField = new TextField("http://localhost:9590");
         sisUrlField.setPrefWidth(300);
         serverGrid.add(sisUrlField, 1, 0);
 
