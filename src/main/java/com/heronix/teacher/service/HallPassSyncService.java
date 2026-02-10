@@ -45,7 +45,7 @@ public class HallPassSyncService {
     private final StudentRepository studentRepository;
     private final RestTemplate restTemplate;
 
-    @Value("${sync.admin-server.url:http://localhost:9580}")
+    @Value("${sync.admin-server.url:http://localhost:9590}")
     private String sisBaseUrl;
 
     @Value("${sync.hall-pass.enabled:true}")
