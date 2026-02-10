@@ -789,4 +789,97 @@ public class EdGamesApiClient {
     public String getWebSocketUrl() {
         return baseUrl.replace("http://", "ws://").replace("/api", "") + "/ws/game";
     }
+
+    // --- V2 Enhanced methods ---
+
+    /**
+     * Create a game assignment.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> createAssignment(String teacherId, Map<String, Object> assignmentData) {
+        try {
+            String requestBody = objectMapper.writeValueAsString(assignmentData);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/assignments?teacherId=" + teacherId))
+                    .timeout(TIMEOUT)
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), Map.class);
+            }
+            log.warn("Failed to create assignment: {}", response.statusCode());
+        } catch (Exception e) {
+            log.error("Error creating assignment", e);
+        }
+        return Map.of();
+    }
+
+    /**
+     * Get assignments by teacher.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getAssignments(String teacherId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/assignments?teacherId=" + teacherId))
+                    .timeout(TIMEOUT)
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), List.class);
+            }
+        } catch (Exception e) {
+            log.error("Error getting assignments", e);
+        }
+        return List.of();
+    }
+
+    /**
+     * Get assignment progress.
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getAssignmentProgress(String assignmentId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/assignments/" + assignmentId + "/progress"))
+                    .timeout(TIMEOUT)
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), List.class);
+            }
+        } catch (Exception e) {
+            log.error("Error getting assignment progress for {}", assignmentId, e);
+        }
+        return List.of();
+    }
+
+    /**
+     * Get learning analytics for a student.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getLearningAnalytics(String studentId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/analytics/learning/student/" + studentId))
+                    .timeout(TIMEOUT)
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                return objectMapper.readValue(response.body(), Map.class);
+            }
+        } catch (Exception e) {
+            log.error("Error getting learning analytics for {}", studentId, e);
+        }
+        return Map.of();
+    }
 }
