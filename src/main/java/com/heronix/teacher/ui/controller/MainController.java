@@ -7,6 +7,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -19,6 +20,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +72,7 @@ public class MainController {
     @FXML private Label networkStatusIcon;
     @FXML private Label networkStatusLabel;
     @FXML private Button themeToggleBtn;
+    @FXML private Button logoutBtn;
 
     // Server status indicators
     @FXML private Label sisStatusIcon;
@@ -314,6 +317,54 @@ public class MainController {
         // Update theme button icon
         String currentTheme = themeManager.getCurrentTheme();
         themeToggleBtn.setText("dark".equalsIgnoreCase(currentTheme) ? "🌙" : "☀");
+    }
+
+    /**
+     * Handle logout - confirm, cleanup, and return to login screen
+     */
+    @FXML
+    public void handleLogout() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Log Out");
+        confirm.setHeaderText("Are you sure you want to log out?");
+        confirm.setContentText("You will be returned to the login screen.");
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                log.info("Teacher logging out");
+
+                // Stop network monitoring timer
+                if (networkCheckTimer != null) {
+                    networkCheckTimer.cancel();
+                    networkCheckTimer = null;
+                }
+
+                // Clear session
+                sessionManager.logout();
+
+                // Navigate back to login screen
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/Login.fxml"));
+                    loader.setControllerFactory(applicationContext::getBean);
+                    Parent loginRoot = loader.load();
+
+                    Stage stage = (Stage) mainRoot.getScene().getWindow();
+                    Scene scene = new Scene(loginRoot, 800, 600);
+
+                    String stylesheet = getClass().getResource("/css/light-theme.css").toExternalForm();
+                    scene.getStylesheets().add(stylesheet);
+
+                    stage.setScene(scene);
+                    stage.setTitle("Heronix-Teacher - Login");
+                    stage.setResizable(false);
+                    stage.centerOnScreen();
+
+                    log.info("Returned to login screen");
+                } catch (Exception e) {
+                    log.error("Failed to load login screen", e);
+                    showError("Logout Error", "Failed to return to login screen: " + e.getMessage());
+                }
+            }
+        });
     }
 
     /**

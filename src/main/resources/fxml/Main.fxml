@@ -99,6 +99,15 @@
                     <Tooltip text="Settings"/>
                 </tooltip>
             </Button>
+
+            <Separator orientation="VERTICAL" prefHeight="30"/>
+
+            <!-- Logout Button -->
+            <Button fx:id="logoutBtn" text="Log Out" onAction="#handleLogout"
+                    styleClass="button-danger"
+                    style="-fx-font-size: 12px; -fx-min-height: 32px;">
+                <tooltip><Tooltip text="Log out and return to login screen"/></tooltip>
+            </Button>
         </HBox>
     </top>
 
