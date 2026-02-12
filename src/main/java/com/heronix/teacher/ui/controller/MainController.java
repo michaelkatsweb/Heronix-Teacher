@@ -350,8 +350,7 @@ public class MainController {
                     Stage stage = (Stage) mainRoot.getScene().getWindow();
                     Scene scene = new Scene(loginRoot, 800, 600);
 
-                    String stylesheet = getClass().getResource("/css/light-theme.css").toExternalForm();
-                    scene.getStylesheets().add(stylesheet);
+                    themeManager.applyCurrentTheme(scene);
 
                     stage.setScene(scene);
                     stage.setTitle("Heronix-Teacher - Login");

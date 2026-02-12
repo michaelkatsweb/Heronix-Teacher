@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ import java.util.Map;
 @Service
 public class PollService {
 
+    private final AdminApiClient adminApiClient;
+
     @Value("${sync.admin-server.url:http://localhost:9590}")
     private String serverUrl;
 
@@ -31,6 +34,18 @@ public class PollService {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    public PollService(AdminApiClient adminApiClient) {
+        this.adminApiClient = adminApiClient;
+    }
+
+    private HttpRequest.Builder withAuth(HttpRequest.Builder builder) {
+        String token = adminApiClient.getAuthToken();
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return builder;
+    }
 
     public List<Map<String, Object>> getMyPolls(String creatorName) {
         return fetchList("/api/polls/my-polls?creatorName=" + encode(creatorName));
@@ -58,10 +73,10 @@ public class PollService {
 
     public void deletePoll(Long id) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + "/api/polls/" + id))
                     .DELETE()
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
@@ -75,11 +90,11 @@ public class PollService {
 
     public boolean hasResponded(Long pollId, Long userId, String userType) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + "/api/polls/" + pollId +
                             "/has-responded?userId=" + userId + "&userType=" + userType))
                     .GET()
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
@@ -97,11 +112,11 @@ public class PollService {
 
     private List<Map<String, Object>> fetchList(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .header("Content-Type", "application/json")
                     .GET()
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
@@ -115,11 +130,11 @@ public class PollService {
 
     private Map<String, Object> fetchMap(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .header("Content-Type", "application/json")
                     .GET()
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
@@ -134,38 +149,46 @@ public class PollService {
     private Map<String, Object> postJson(String path, Map<String, Object> body) {
         try {
             String json = objectMapper.writeValueAsString(body);
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 201) {
                 return objectMapper.readValue(response.body(), new TypeReference<>() {});
             }
+            log.error("POST to {} failed with status {} : {}", path, response.statusCode(), response.body());
+            throw new RuntimeException("Server returned " + response.statusCode());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to POST to {}", path, e);
+            throw new RuntimeException("Request failed: " + e.getMessage(), e);
         }
-        return Collections.emptyMap();
     }
 
     private Map<String, Object> postEmpty(String path) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = withAuth(HttpRequest.newBuilder()
                     .uri(URI.create(serverUrl + path))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.noBody())
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(10)))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 return objectMapper.readValue(response.body(), new TypeReference<>() {});
             }
+            log.error("POST to {} failed with status {} : {}", path, response.statusCode(), response.body());
+            throw new RuntimeException("Server returned " + response.statusCode());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to POST to {}", path, e);
+            throw new RuntimeException("Request failed: " + e.getMessage(), e);
         }
-        return Collections.emptyMap();
     }
 
     private String encode(String value) {

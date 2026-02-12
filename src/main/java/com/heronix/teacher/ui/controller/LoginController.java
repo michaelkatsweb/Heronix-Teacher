@@ -4,6 +4,7 @@ import com.heronix.teacher.model.domain.Teacher;
 import com.heronix.teacher.service.AdminApiClient;
 import com.heronix.teacher.service.AuthenticationService;
 import com.heronix.teacher.service.SessionManager;
+import com.heronix.teacher.util.ThemeManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -35,6 +36,7 @@ public class LoginController {
     private final SessionManager sessionManager;
     private final ConfigurableApplicationContext springContext;
     private final AdminApiClient adminApiClient;
+    private final ThemeManager themeManager;
 
     @FXML
     private TextField employeeIdField;
@@ -194,9 +196,8 @@ public class LoginController {
             // Create new scene
             Scene scene = new Scene(root, 1200, 800);
 
-            // Apply light theme stylesheet
-            String stylesheet = getClass().getResource("/css/light-theme.css").toExternalForm();
-            scene.getStylesheets().add(stylesheet);
+            // Apply current theme
+            themeManager.applyCurrentTheme(scene);
 
             // Set scene on stage
             stage.setScene(scene);

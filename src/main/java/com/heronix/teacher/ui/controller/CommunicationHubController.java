@@ -216,9 +216,9 @@ public class CommunicationHubController {
                 "Verifying Heronix-Talk server is available (port 9680)", false);
 
         communicationService.initialize(employeeId, storedPassword)
-                .thenAccept(success -> Platform.runLater(() -> {
-                    log.info("CommunicationService.initialize() returned: {}", success);
-                    if (success) {
+                .thenAccept(status -> Platform.runLater(() -> {
+                    log.info("CommunicationService.initialize() returned: {}", status);
+                    if ("SUCCESS".equals(status)) {
                         log.info("Connected to Heronix-Talk server successfully");
                         hideConnectionBanner();
                         updateConnectionStatus(true);
@@ -239,8 +239,24 @@ public class CommunicationHubController {
                                                 "Server connected but no channels exist yet. Click + to create one or wait for server to initialize default channels.");
                                     }
                                 }));
+                    } else if ("AUTH_FAILED".equals(status)) {
+                        log.warn("Talk authentication failed");
+                        showConnectionBanner("error", "Authentication Failed",
+                                "Your account may not exist on the Talk server. Contact your administrator.", true);
+                        updateChannelPlaceholder("Authentication Failed",
+                                "Could not authenticate with Heronix-Talk. Your account may need to be registered on the Talk server.");
+                        updateConnectionStatus(false);
+                        loadSampleData();
+                    } else if ("WEBSOCKET_FAILED".equals(status)) {
+                        log.warn("Talk WebSocket connection failed");
+                        showConnectionBanner("error", "Connection Interrupted",
+                                "Authenticated but real-time connection failed. Try again or restart the Talk server.", true);
+                        updateChannelPlaceholder("Connection Interrupted",
+                                "Authenticated successfully but the real-time connection could not be established.");
+                        updateConnectionStatus(false);
+                        loadSampleData();
                     } else {
-                        log.warn("Could not connect to Heronix-Talk, using offline mode");
+                        log.warn("Could not connect to Heronix-Talk (status: {}), using offline mode", status);
                         showConnectionBanner("error", "Server Unavailable",
                                 "Cannot connect to Heronix-Talk server (port 9680). Make sure the Talk server is running.", true);
                         updateChannelPlaceholder("Server Offline",

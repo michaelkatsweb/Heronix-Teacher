@@ -225,7 +225,7 @@ public class CommunicationService {
      * Initialize communication service with teacher credentials
      * Called after successful teacher login
      */
-    public CompletableFuture<Boolean> initialize(String employeeId, String password) {
+    public CompletableFuture<String> initialize(String employeeId, String password) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 log.info("=== Initializing CommunicationService for {} ===", employeeId);
@@ -235,7 +235,7 @@ public class CommunicationService {
                 log.info("Server reachable check: {}", serverReachable);
                 if (!serverReachable) {
                     log.warn("Heronix-Talk server not reachable");
-                    return false;
+                    return "SERVER_UNREACHABLE";
                 }
 
                 // Authenticate with Talk server
@@ -244,7 +244,7 @@ public class CommunicationService {
                 log.info("Authentication result: {}", authenticated);
                 if (!authenticated) {
                     log.warn("Failed to authenticate with Heronix-Talk");
-                    return false;
+                    return "AUTH_FAILED";
                 }
 
                 // Connect WebSocket
@@ -270,15 +270,15 @@ public class CommunicationService {
                     initialized = true;
                     connected = true;
                     log.info("=== Communication service initialized successfully ===");
-                    return true;
+                    return "SUCCESS";
                 } else {
                     log.warn("WebSocket connection failed");
-                    return false;
+                    return "WEBSOCKET_FAILED";
                 }
 
             } catch (Exception e) {
                 log.error("Error initializing communication service", e);
-                return false;
+                return "ERROR";
             }
         });
     }

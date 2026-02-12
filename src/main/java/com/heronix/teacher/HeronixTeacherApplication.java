@@ -3,6 +3,7 @@ package com.heronix.teacher;
 import com.heronix.teacher.model.domain.Teacher;
 import com.heronix.teacher.repository.TeacherRepository;
 import com.heronix.teacher.service.SessionManager;
+import com.heronix.teacher.util.ThemeManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -189,6 +190,8 @@ public class HeronixTeacherApplication extends Application {
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 800, 600);
+        ThemeManager themeManager = springContext.getBean(ThemeManager.class);
+        themeManager.applyCurrentTheme(scene);
         stage.setTitle("Heronix-Teacher - Login");
         stage.setScene(scene);
         stage.setMinWidth(800);
@@ -204,11 +207,8 @@ public class HeronixTeacherApplication extends Application {
         Parent root = loader.load();
 
         Scene scene = new Scene(root, 1200, 800);
-        String stylesheet = getClass().getResource("/css/light-theme.css") != null
-                ? getClass().getResource("/css/light-theme.css").toExternalForm() : null;
-        if (stylesheet != null) {
-            scene.getStylesheets().add(stylesheet);
-        }
+        ThemeManager themeManager = springContext.getBean(ThemeManager.class);
+        themeManager.applyCurrentTheme(scene);
 
         stage.setTitle("Heronix-Teacher - " + teacherName);
         stage.setScene(scene);
