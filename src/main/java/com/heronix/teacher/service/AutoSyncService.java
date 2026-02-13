@@ -97,6 +97,15 @@ public class AutoSyncService {
     private long totalSyncedItems = 0;
     private long failedSyncAttempts = 0;
 
+    // Circuit breaker state
+    private static final int CIRCUIT_BREAKER_THRESHOLD = 5;
+    private static final long INITIAL_COOLDOWN_MS = 60_000;       // 60 seconds
+    private static final long MAX_COOLDOWN_MS = 5 * 60_000;       // 5 minutes
+    private int consecutiveFailures = 0;
+    private boolean circuitOpen = false;
+    private long circuitOpenedAt = 0;
+    private long currentCooldownMs = INITIAL_COOLDOWN_MS;
+
     /**
      * Initialize auto-sync service
      */
@@ -136,6 +145,19 @@ public class AutoSyncService {
             return;
         }
 
+        // Circuit breaker: skip sync during cooldown
+        if (circuitOpen) {
+            long elapsed = System.currentTimeMillis() - circuitOpenedAt;
+            if (elapsed < currentCooldownMs) {
+                log.debug("Circuit breaker open - skipping sync ({} seconds remaining)",
+                        (currentCooldownMs - elapsed) / 1000);
+                return;
+            }
+            // Cooldown elapsed: allow a probe attempt (half-open)
+            log.info("Circuit breaker half-open - attempting sync probe after {} seconds cooldown",
+                    currentCooldownMs / 1000);
+        }
+
         try {
             // Check network availability
             if (!networkMonitor.isNetworkAvailable()) {
@@ -173,10 +195,33 @@ public class AutoSyncService {
 
             lastSyncTime = System.currentTimeMillis();
 
+            // Success: reset circuit breaker
+            if (circuitOpen) {
+                log.info("Sync probe succeeded - closing circuit breaker");
+            }
+            consecutiveFailures = 0;
+            circuitOpen = false;
+            currentCooldownMs = INITIAL_COOLDOWN_MS;
+
         } catch (Exception e) {
             failedSyncAttempts++;
-            log.error("Sync failed (attempt {}): {} - Data remains safely stored locally",
-                     failedSyncAttempts, e.getMessage());
+            consecutiveFailures++;
+            log.error("Sync failed (consecutive: {}, total: {}): {} - Data remains safely stored locally",
+                     consecutiveFailures, failedSyncAttempts, e.getMessage());
+
+            // Open circuit breaker after threshold consecutive failures
+            if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD && !circuitOpen) {
+                circuitOpen = true;
+                circuitOpenedAt = System.currentTimeMillis();
+                log.warn("Circuit breaker OPEN after {} consecutive failures - pausing sync for {} seconds",
+                        consecutiveFailures, currentCooldownMs / 1000);
+            } else if (circuitOpen) {
+                // Half-open probe failed: double the cooldown (up to max)
+                circuitOpenedAt = System.currentTimeMillis();
+                currentCooldownMs = Math.min(currentCooldownMs * 2, MAX_COOLDOWN_MS);
+                log.warn("Sync probe failed - circuit breaker remains OPEN, cooldown increased to {} seconds",
+                        currentCooldownMs / 1000);
+            }
         }
     }
 
@@ -388,6 +433,8 @@ public class AutoSyncService {
         stats.put("lastSyncTime", lastSyncTime);
         stats.put("totalSyncedItems", totalSyncedItems);
         stats.put("failedAttempts", failedSyncAttempts);
+        stats.put("consecutiveFailures", consecutiveFailures);
+        stats.put("circuitBreakerOpen", circuitOpen);
         stats.put("networkAvailable", networkMonitor.getLastKnownStatus());
         stats.put("pendingStudents", studentRepository.findNeedingSync().size());
         stats.put("pendingCategories", categoryRepository.findNeedingSync().size());

@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class CodeBreakerController implements Initializable {
 
     private final EdGamesApiClient edGamesApiClient;
+    private final org.springframework.context.ApplicationContext applicationContext;
 
     // Session Setup Panel
     @FXML private ComboBox<QuestionSetItem> questionSetCombo;
@@ -436,6 +437,7 @@ public class CodeBreakerController implements Initializable {
     private void openQuestionEditor(QuestionSetItem setItem) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/QuestionEditor.fxml"));
+            loader.setControllerFactory(applicationContext::getBean);
             Parent editorRoot = loader.load();
 
             QuestionEditorController editorController = loader.getController();

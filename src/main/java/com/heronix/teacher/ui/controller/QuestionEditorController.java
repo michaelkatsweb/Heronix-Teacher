@@ -11,6 +11,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -24,6 +29,9 @@ import java.util.*;
  * Controller for the Question Editor view.
  * Allows teachers to add, edit, and remove questions from a question set.
  */
+@Slf4j
+@Component
+@Scope("prototype")
 public class QuestionEditorController implements Initializable {
 
     @FXML private Button backBtn;
@@ -58,7 +66,9 @@ public class QuestionEditorController implements Initializable {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String serverUrl = "http://localhost:8081";
+
+    @Value("${heronix.edgames.base-url:http://localhost:8081}")
+    private String serverUrl;
 
     private final ObservableList<QuestionItem> questions = FXCollections.observableArrayList();
     private QuestionSetData currentSet;
@@ -226,7 +236,7 @@ public class QuestionEditorController implements Initializable {
                     });
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to load questions for set {}", currentSet.getSetId(), e);
                 Platform.runLater(() -> {
                     statusLabel.setText("Error: " + e.getMessage());
                     statusLabel.setStyle("-fx-text-fill: #f44336;");
@@ -448,7 +458,7 @@ public class QuestionEditorController implements Initializable {
                 });
 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to save questions for set {}", currentSet.getSetId(), e);
                 Platform.runLater(() -> {
                     statusLabel.setText("Save failed: " + e.getMessage());
                     statusLabel.setStyle("-fx-text-fill: #f44336;");
@@ -479,7 +489,7 @@ public class QuestionEditorController implements Initializable {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return response.statusCode() == 200;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to create question in set {}", currentSet.getSetId(), e);
             return false;
         }
     }
@@ -506,7 +516,7 @@ public class QuestionEditorController implements Initializable {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return response.statusCode() == 200;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to update question {}", item.getQuestionId(), e);
             return false;
         }
     }
@@ -521,7 +531,7 @@ public class QuestionEditorController implements Initializable {
 
                 httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to delete question {}", questionId, e);
             }
         }).start();
     }

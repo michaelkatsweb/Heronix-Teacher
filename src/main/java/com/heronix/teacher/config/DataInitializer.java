@@ -6,17 +6,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Data Initializer
  *
- * Creates test teacher accounts for development and testing
- * Only runs if teachers table is empty
+ * Creates test teacher accounts for development and testing.
+ * Only active when the "dev" Spring profile is set.
+ * In production, teachers are synced from the SIS Server via TeacherSyncService.
  *
  * @author Heronix-Teacher Team
  * @version 1.0.0
  */
 @Configuration
+@Profile("dev")
 @Slf4j
 @RequiredArgsConstructor
 public class DataInitializer {
