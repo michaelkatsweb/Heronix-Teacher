@@ -3,8 +3,10 @@ package com.heronix.teacher.ui.controller;
 import com.heronix.teacher.model.domain.Assignment;
 import com.heronix.teacher.model.domain.Grade;
 import com.heronix.teacher.model.domain.Student;
+import com.heronix.teacher.service.AdminApiClient;
 import com.heronix.teacher.service.GradebookService;
 import com.heronix.teacher.service.StudentEnrollmentCache;
+import com.heronix.teacher.ui.dialog.StudentCardDialog;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -50,6 +52,7 @@ public class GradebookController {
 
     private final GradebookService gradebookService;
     private final StudentEnrollmentCache studentEnrollmentCache;
+    private final AdminApiClient adminApiClient;
 
     // Filter controls
     @FXML private TextField searchField;
@@ -136,6 +139,22 @@ public class GradebookController {
         });
 
         gradebookTable.setItems(students);
+
+        // Double-click row → open Student Card dialog
+        gradebookTable.setRowFactory(tv -> {
+            TableRow<Student> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    Student student = row.getItem();
+                    Long serverId = student.getServerId();
+                    if (serverId != null) {
+                        StudentCardDialog.show(adminApiClient, serverId,
+                                student.getFullName(), gradebookTable.getScene().getWindow());
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     /**

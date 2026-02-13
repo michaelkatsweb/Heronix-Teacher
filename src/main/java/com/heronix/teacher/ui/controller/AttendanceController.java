@@ -9,6 +9,7 @@ import com.heronix.teacher.service.AttendanceService;
 import com.heronix.teacher.service.GradebookService;
 import com.heronix.teacher.service.SessionManager;
 import com.heronix.teacher.service.StudentEnrollmentCache;
+import com.heronix.teacher.ui.dialog.StudentCardDialog;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -347,6 +348,22 @@ public class AttendanceController {
         });
 
         table.getColumns().addAll(idCol, nameCol, statusCol, timeCol, notesCol, actionsCol);
+
+        // Double-click row → open Student Card dialog
+        table.setRowFactory(tv -> {
+            TableRow<AttendanceRow> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    AttendanceRow item = row.getItem();
+                    Long serverId = getServerIdForStudent(item.getStudentId());
+                    if (serverId != null) {
+                        StudentCardDialog.show(adminApiClient, serverId,
+                                item.getStudentName(), table.getScene().getWindow());
+                    }
+                }
+            });
+            return row;
+        });
 
         // Initialize empty data list
         ObservableList<AttendanceRow> data = FXCollections.observableArrayList();

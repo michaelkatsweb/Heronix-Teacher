@@ -90,6 +90,7 @@ public class MainController {
     @FXML private Button deviceMgmtBtn;
     @FXML private Button gameAnalyticsBtn;
     @FXML private Button codeBreakerBtn;
+    @FXML private Button disciplineBtn;
     @FXML private Button dismissalBtn;
     @FXML private Button pollsBtn;
 
@@ -237,6 +238,7 @@ public class MainController {
         updateNavButtonText(dashboardBtn, "📊", "Dashboard", expanded);
         updateNavButtonText(gradebookBtn, "📚", "Gradebook", expanded);
         updateNavButtonText(attendanceBtn, "✓", "Attendance", expanded);
+        updateNavButtonText(disciplineBtn, "⚠", "Discipline", expanded);
         updateNavButtonText(hallpassBtn, "🎫", "Hall Pass", expanded);
         updateNavButtonText(clubsBtn, "🎭", "Clubs", expanded);
         updateNavButtonText(walletBtn, "💰", "Wallet", expanded);
@@ -391,6 +393,14 @@ public class MainController {
     }
 
     /**
+     * Show Discipline Ticket view
+     */
+    @FXML
+    public void showDiscipline() {
+        loadView("DisciplineTicket", disciplineBtn);
+    }
+
+    /**
      * Show Hall Pass view
      */
     @FXML
@@ -500,6 +510,9 @@ public class MainController {
         dashboardBtn.getStyleClass().remove("nav-button-active");
         gradebookBtn.getStyleClass().remove("nav-button-active");
         attendanceBtn.getStyleClass().remove("nav-button-active");
+        if (disciplineBtn != null) {
+            disciplineBtn.getStyleClass().remove("nav-button-active");
+        }
         hallpassBtn.getStyleClass().remove("nav-button-active");
         clubsBtn.getStyleClass().remove("nav-button-active");
         walletBtn.getStyleClass().remove("nav-button-active");
