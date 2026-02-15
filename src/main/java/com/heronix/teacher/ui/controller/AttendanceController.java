@@ -915,58 +915,58 @@ public class AttendanceController {
      */
     @FXML
     private void exportAttendance() {
-        log.info("Exporting attendance for all periods");
+        log.info("Exporting attendance for all periods (encrypted)");
         statusLabel.setText("Exporting attendance...");
 
-        // Show file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Attendance");
         fileChooser.setInitialFileName("attendance_" + currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) +
-                "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
+                "_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix")
         );
 
         File file = fileChooser.showSaveDialog(periodTabPane.getScene().getWindow());
 
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                // Write BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
-
-                // Header
-                writer.println("Date,Period,Student Name,Student ID,Status,Arrival Time,Notes");
-
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
                 int totalRecords = 0;
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Date,Period,Student Name,Student ID,Status,Arrival Time,Notes");
 
-                // Export data from all periods
-                for (int period = 0; period <= 7; period++) {
-                    ObservableList<AttendanceRow> data = periodData.get(period);
-                    if (data != null && !data.isEmpty()) {
-                        String periodName = period == 0 ? "Homeroom" : "Period " + period;
+                    for (int period = 0; period <= 7; period++) {
+                        ObservableList<AttendanceRow> data = periodData.get(period);
+                        if (data != null && !data.isEmpty()) {
+                            String periodName = period == 0 ? "Homeroom" : "Period " + period;
 
-                        for (AttendanceRow row : data) {
-                            writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
-                                    currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
-                                    periodName,
-                                    escapeCSV(row.getStudentName()),
-                                    escapeCSV(row.getStudentIdStr()),
-                                    row.getStatus(),
-                                    row.arrivalTimeProperty().get() != null ? row.arrivalTimeProperty().get() : "",
-                                    escapeCSV(row.notesProperty().get())
-                            ));
-                            totalRecords++;
+                            for (AttendanceRow row : data) {
+                                writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
+                                        currentDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                                        periodName,
+                                        escapeCSV(row.getStudentName()),
+                                        escapeCSV(row.getStudentIdStr()),
+                                        row.getStatus(),
+                                        row.arrivalTimeProperty().get() != null ? row.arrivalTimeProperty().get() : "",
+                                        escapeCSV(row.notesProperty().get())
+                                ));
+                                totalRecords++;
+                            }
                         }
                     }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
-                log.info("Attendance exported to {} - {} records", file.getAbsolutePath(), totalRecords);
+                log.info("Attendance exported (encrypted) to {} - {} records", file.getAbsolutePath(), totalRecords);
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Export Successful");
                 alert.setHeaderText("Attendance Exported");
-                alert.setContentText(String.format("Exported %d attendance records to:\n%s",
+                alert.setContentText(String.format("Exported %d attendance records to:\n%s (encrypted)",
                         totalRecords, file.getName()));
                 alert.showAndWait();
 

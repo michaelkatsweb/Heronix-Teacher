@@ -612,10 +612,9 @@ public class GradebookController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Grades");
         fileChooser.setInitialFileName("gradebook_export_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix")
         );
 
         File file = fileChooser.showSaveDialog(gradebookTable.getScene().getWindow());
@@ -629,55 +628,57 @@ public class GradebookController {
      * Export grades data to CSV file
      */
     private void exportGradesToCsv(File file) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-            // Write BOM for Excel UTF-8 compatibility
-            writer.write('\ufeff');
+        try {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            try (PrintWriter writer = new PrintWriter(sw)) {
+                writer.write('\ufeff');
 
-            // Build header row
-            StringBuilder header = new StringBuilder();
-            header.append("Student Name,Student ID,Grade Level,Current GPA");
+                StringBuilder header = new StringBuilder();
+                header.append("Student Name,Student ID,Grade Level,Current GPA");
 
-            for (Assignment assignment : assignments) {
-                // Escape assignment name if it contains commas
-                String name = escapeCSV(assignment.getName());
-                header.append(",").append(name).append(" (").append(assignment.getMaxPoints()).append(" pts)");
-            }
-            writer.println(header);
-
-            // Write data rows
-            for (Student student : students) {
-                StringBuilder row = new StringBuilder();
-                row.append(escapeCSV(student.getFullName())).append(",");
-                row.append(escapeCSV(student.getStudentId())).append(",");
-                row.append(student.getGradeLevel()).append(",");
-                row.append(student.getCurrentGpa() != null ? String.format("%.2f", student.getCurrentGpa()) : "");
-
-                // Add grade for each assignment
                 for (Assignment assignment : assignments) {
-                    row.append(",");
-                    Optional<Grade> gradeOpt = gradebookService.getGrade(student.getId(), assignment.getId());
+                    String name = escapeCSV(assignment.getName());
+                    header.append(",").append(name).append(" (").append(assignment.getMaxPoints()).append(" pts)");
+                }
+                writer.println(header);
 
-                    if (gradeOpt.isPresent()) {
-                        Grade grade = gradeOpt.get();
-                        if (grade.getMissing()) {
-                            row.append("Missing");
-                        } else if (grade.getExcused()) {
-                            row.append("Excused");
-                        } else if (grade.getScore() != null) {
-                            row.append(String.format("%.1f", grade.getScore()));
+                for (Student student : students) {
+                    StringBuilder row = new StringBuilder();
+                    row.append(escapeCSV(student.getFullName())).append(",");
+                    row.append(escapeCSV(student.getStudentId())).append(",");
+                    row.append(student.getGradeLevel()).append(",");
+                    row.append(student.getCurrentGpa() != null ? String.format("%.2f", student.getCurrentGpa()) : "");
+
+                    for (Assignment assignment : assignments) {
+                        row.append(",");
+                        Optional<Grade> gradeOpt = gradebookService.getGrade(student.getId(), assignment.getId());
+
+                        if (gradeOpt.isPresent()) {
+                            Grade grade = gradeOpt.get();
+                            if (grade.getMissing()) {
+                                row.append("Missing");
+                            } else if (grade.getExcused()) {
+                                row.append("Excused");
+                            } else if (grade.getScore() != null) {
+                                row.append(String.format("%.1f", grade.getScore()));
+                            }
                         }
                     }
+                    writer.println(row);
                 }
-                writer.println(row);
             }
+            String originalName = file.getName().replace(".heronix", ".csv");
+            byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                    .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+            java.nio.file.Files.write(file.toPath(), encrypted);
 
-            log.info("Grades exported successfully to {}", file.getAbsolutePath());
+            log.info("Grades exported (encrypted) to {}", file.getAbsolutePath());
             showInfo("Export Successful",
                     "Grades exported to:\n" + file.getName() + "\n\n" +
-                    "Exported " + students.size() + " students and " + assignments.size() + " assignments.");
+                    "Exported " + students.size() + " students and " + assignments.size() + " assignments (encrypted).");
 
         } catch (Exception e) {
-            log.error("Error exporting grades to CSV", e);
+            log.error("Error exporting grades", e);
             showError("Failed to export grades: " + e.getMessage());
         }
     }

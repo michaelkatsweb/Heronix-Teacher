@@ -181,6 +181,10 @@
                 <Button fx:id="exportBtn" text="📤 Export" onAction="#exportData"
                         styleClass="button-secondary"
                         maxWidth="Infinity" prefHeight="32"/>
+
+                <Button text="🔓 Decrypt File" onAction="#handleOpenEncryptedExport"
+                        styleClass="button-secondary"
+                        maxWidth="Infinity" prefHeight="32"/>
             </VBox>
 
             <Region VBox.vgrow="ALWAYS"/>

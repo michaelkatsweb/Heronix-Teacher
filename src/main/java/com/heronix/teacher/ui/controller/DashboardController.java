@@ -859,24 +859,31 @@ public class DashboardController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Attendance Report");
         fileChooser.setInitialFileName("attendance_report_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
-                writer.println("Date,Student Name,Status,Arrival Time,Notes");
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Date,Student Name,Status,Arrival Time,Notes");
 
-                var records = attendanceService.getAttendanceByDateRange(fromDate, toDate);
-                for (var record : records) {
-                    writer.println(String.format("%s,%s,%s,%s,%s",
-                            record.getAttendanceDate(),
-                            escapeCSV(record.getStudent().getFullName()),
-                            record.getStatus(),
-                            record.getArrivalTime() != null ? record.getArrivalTime().toString() : "",
-                            escapeCSV(record.getNotes())));
+                    var records = attendanceService.getAttendanceByDateRange(fromDate, toDate);
+                    for (var record : records) {
+                        writer.println(String.format("%s,%s,%s,%s,%s",
+                                record.getAttendanceDate(),
+                                escapeCSV(record.getStudent().getFullName()),
+                                record.getStatus(),
+                                record.getArrivalTime() != null ? record.getArrivalTime().toString() : "",
+                                escapeCSV(record.getNotes())));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Attendance report exported to:\n" + file.getName());
             } catch (Exception e) {
@@ -893,24 +900,31 @@ public class DashboardController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Grade Report");
         fileChooser.setInitialFileName("grade_report_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
-                writer.println("Student Name,Student ID,Grade Level,Current GPA,Has IEP,Has 504");
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Student Name,Student ID,Grade Level,Current GPA,Has IEP,Has 504");
 
-                for (Student student : gradebookService.getAllActiveStudents()) {
-                    writer.println(String.format("%s,%s,%d,%.2f,%s,%s",
-                            escapeCSV(student.getFullName()),
-                            student.getStudentId(),
-                            student.getGradeLevel(),
-                            student.getCurrentGpa() != null ? student.getCurrentGpa() : 0.0,
-                            student.getHasIep() != null && student.getHasIep() ? "Yes" : "No",
-                            student.getHas504() != null && student.getHas504() ? "Yes" : "No"));
+                    for (Student student : gradebookService.getAllActiveStudents()) {
+                        writer.println(String.format("%s,%s,%d,%.2f,%s,%s",
+                                escapeCSV(student.getFullName()),
+                                student.getStudentId(),
+                                student.getGradeLevel(),
+                                student.getCurrentGpa() != null ? student.getCurrentGpa() : 0.0,
+                                student.getHasIep() != null && student.getHasIep() ? "Yes" : "No",
+                                student.getHas504() != null && student.getHas504() ? "Yes" : "No"));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Grade report exported to:\n" + file.getName());
             } catch (Exception e) {
@@ -927,32 +941,39 @@ public class DashboardController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Hall Pass Report");
         fileChooser.setInitialFileName("hallpass_report_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
-                writer.println("Date,Student Name,Destination,Time Out,Time In,Duration,Status");
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Date,Student Name,Destination,Time Out,Time In,Duration,Status");
 
-                var passes = hallPassService.getPassesByDateRange(LocalDate.now().minusDays(30), LocalDate.now());
-                for (var pass : passes) {
-                    String duration = "";
-                    if (pass.getTimeOut() != null && pass.getTimeIn() != null) {
-                        long mins = java.time.Duration.between(pass.getTimeOut(), pass.getTimeIn()).toMinutes();
-                        duration = mins + " min";
+                    var passes = hallPassService.getPassesByDateRange(LocalDate.now().minusDays(30), LocalDate.now());
+                    for (var pass : passes) {
+                        String duration = "";
+                        if (pass.getTimeOut() != null && pass.getTimeIn() != null) {
+                            long mins = java.time.Duration.between(pass.getTimeOut(), pass.getTimeIn()).toMinutes();
+                            duration = mins + " min";
+                        }
+
+                        writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
+                                pass.getPassDate(),
+                                escapeCSV(pass.getStudent().getFullName()),
+                                escapeCSV(pass.getDestination()),
+                                pass.getTimeOut() != null ? pass.getTimeOut().format(DateTimeFormatter.ofPattern("h:mm a")) : "",
+                                pass.getTimeIn() != null ? pass.getTimeIn().format(DateTimeFormatter.ofPattern("h:mm a")) : "",
+                                duration,
+                                pass.getStatus()));
                     }
-
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
-                            pass.getPassDate(),
-                            escapeCSV(pass.getStudent().getFullName()),
-                            escapeCSV(pass.getDestination()),
-                            pass.getTimeOut() != null ? pass.getTimeOut().format(DateTimeFormatter.ofPattern("h:mm a")) : "",
-                            pass.getTimeIn() != null ? pass.getTimeIn().format(DateTimeFormatter.ofPattern("h:mm a")) : "",
-                            duration,
-                            pass.getStatus()));
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Hall pass report exported to:\n" + file.getName());
             } catch (Exception e) {
@@ -969,56 +990,58 @@ public class DashboardController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Complete Summary");
         fileChooser.setInitialFileName("complete_summary_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
 
-                // Header
-                writer.println("HERONIX-TEACHER SUMMARY REPORT");
-                writer.println("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                writer.println("");
+                    writer.println("HERONIX-TEACHER SUMMARY REPORT");
+                    writer.println("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    writer.println("");
 
-                // Attendance Summary
-                Map<String, Object> attendanceStats = attendanceService.getTodayStatistics();
-                writer.println("ATTENDANCE SUMMARY");
-                writer.println("Date," + attendanceStats.get("date"));
-                writer.println("Total Students," + attendanceStats.get("totalStudents"));
-                writer.println("Present," + attendanceStats.get("present"));
-                writer.println("Absent," + attendanceStats.get("absent"));
-                writer.println("Tardy," + attendanceStats.get("tardy"));
-                writer.println("Attendance Rate," + attendanceStats.get("presentRate"));
-                writer.println("");
+                    Map<String, Object> attendanceStats = attendanceService.getTodayStatistics();
+                    writer.println("ATTENDANCE SUMMARY");
+                    writer.println("Date," + attendanceStats.get("date"));
+                    writer.println("Total Students," + attendanceStats.get("totalStudents"));
+                    writer.println("Present," + attendanceStats.get("present"));
+                    writer.println("Absent," + attendanceStats.get("absent"));
+                    writer.println("Tardy," + attendanceStats.get("tardy"));
+                    writer.println("Attendance Rate," + attendanceStats.get("presentRate"));
+                    writer.println("");
 
-                // Grade Summary
-                List<Student> students = gradebookService.getAllActiveStudents();
-                double avgGpa = students.stream()
-                        .filter(s -> s.getCurrentGpa() != null)
-                        .mapToDouble(Student::getCurrentGpa)
-                        .average()
-                        .orElse(0.0);
+                    List<Student> students = gradebookService.getAllActiveStudents();
+                    double avgGpa = students.stream()
+                            .filter(s -> s.getCurrentGpa() != null)
+                            .mapToDouble(Student::getCurrentGpa)
+                            .average()
+                            .orElse(0.0);
 
-                writer.println("GRADE SUMMARY");
-                writer.println("Total Students," + students.size());
-                writer.println("Average GPA," + String.format("%.2f", avgGpa));
-                writer.println("Pending Grades," + gradebookService.getPendingGradesCount());
-                writer.println("");
+                    writer.println("GRADE SUMMARY");
+                    writer.println("Total Students," + students.size());
+                    writer.println("Average GPA," + String.format("%.2f", avgGpa));
+                    writer.println("Pending Grades," + gradebookService.getPendingGradesCount());
+                    writer.println("");
 
-                // Student Support Summary
-                long iepCount = students.stream().filter(s -> s.getHasIep() != null && s.getHasIep()).count();
-                long plan504Count = students.stream().filter(s -> s.getHas504() != null && s.getHas504()).count();
+                    long iepCount = students.stream().filter(s -> s.getHasIep() != null && s.getHasIep()).count();
+                    long plan504Count = students.stream().filter(s -> s.getHas504() != null && s.getHas504()).count();
 
-                writer.println("STUDENT SUPPORT SUMMARY");
-                writer.println("IEP Students," + iepCount);
-                writer.println("504 Plan Students," + plan504Count);
-                writer.println("");
+                    writer.println("STUDENT SUPPORT SUMMARY");
+                    writer.println("IEP Students," + iepCount);
+                    writer.println("504 Plan Students," + plan504Count);
+                    writer.println("");
 
-                // Hall Pass Summary
-                writer.println("HALL PASS SUMMARY");
-                writer.println("Active Passes," + hallPassService.getActiveHallPassesCount());
+                    writer.println("HALL PASS SUMMARY");
+                    writer.println("Active Passes," + hallPassService.getActiveHallPassesCount());
+                }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Complete summary exported to:\n" + file.getName());
             } catch (Exception e) {
@@ -1314,26 +1337,33 @@ public class DashboardController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Student Roster");
         fileChooser.setInitialFileName("student_roster_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
-                writer.println("Student Name,Student ID,Grade Level,Email,Current GPA,Has IEP,Has 504,Active");
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Student Name,Student ID,Grade Level,Email,Current GPA,Has IEP,Has 504,Active");
 
-                for (Student student : gradebookService.getAllActiveStudents()) {
-                    writer.println(String.format("%s,%s,%d,%s,%.2f,%s,%s,%s",
-                            escapeCSV(student.getFullName()),
-                            student.getStudentId(),
-                            student.getGradeLevel(),
-                            student.getEmail() != null ? student.getEmail() : "",
-                            student.getCurrentGpa() != null ? student.getCurrentGpa() : 0.0,
-                            student.getHasIep() != null && student.getHasIep() ? "Yes" : "No",
-                            student.getHas504() != null && student.getHas504() ? "Yes" : "No",
-                            student.getActive() != null && student.getActive() ? "Yes" : "No"));
+                    for (Student student : gradebookService.getAllActiveStudents()) {
+                        writer.println(String.format("%s,%s,%d,%s,%.2f,%s,%s,%s",
+                                escapeCSV(student.getFullName()),
+                                student.getStudentId(),
+                                student.getGradeLevel(),
+                                student.getEmail() != null ? student.getEmail() : "",
+                                student.getCurrentGpa() != null ? student.getCurrentGpa() : 0.0,
+                                student.getHasIep() != null && student.getHasIep() ? "Yes" : "No",
+                                student.getHas504() != null && student.getHas504() ? "Yes" : "No",
+                                student.getActive() != null && student.getActive() ? "Yes" : "No"));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Student roster exported to:\n" + file.getName());
             } catch (Exception e) {

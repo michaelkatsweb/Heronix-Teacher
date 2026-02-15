@@ -689,49 +689,50 @@ public class ClassWalletController {
      */
     @FXML
     public void handleExport() {
-        log.info("Exporting wallet data to CSV");
+        log.info("Exporting wallet data (encrypted)");
 
         if (transactions.isEmpty()) {
             showError("No transactions to export");
             return;
         }
 
-        // Show file chooser
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Wallet Transactions");
         fileChooser.setInitialFileName("class_wallet_export_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix")
         );
 
         File file = fileChooser.showSaveDialog(transactionsTable.getScene().getWindow());
 
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                // Write BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Date,Student Name,Student ID,Type,Category,Description,Amount,Balance After,Status");
 
-                // Header
-                writer.println("Date,Student Name,Student ID,Type,Category,Description,Amount,Balance After,Status");
-
-                // Data rows
-                for (ClassWallet t : transactions) {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%.2f,%.2f,%s",
-                            t.getTransactionDate() != null ? t.getTransactionDate().format(DATE_FORMATTER) : "",
-                            escapeCSV(t.getStudent() != null ? t.getStudent().getFullName() : "Unknown"),
-                            escapeCSV(t.getStudent() != null ? t.getStudent().getStudentId() : ""),
-                            t.getTransactionType(),
-                            escapeCSV(t.getCategory()),
-                            escapeCSV(t.getDescription()),
-                            t.getAmount(),
-                            t.getBalanceAfter() != null ? t.getBalanceAfter() : BigDecimal.ZERO,
-                            t.getApproved() ? "Approved" : "Pending"
-                    ));
+                    for (ClassWallet t : transactions) {
+                        writer.println(String.format("%s,%s,%s,%s,%s,%s,%.2f,%.2f,%s",
+                                t.getTransactionDate() != null ? t.getTransactionDate().format(DATE_FORMATTER) : "",
+                                escapeCSV(t.getStudent() != null ? t.getStudent().getFullName() : "Unknown"),
+                                escapeCSV(t.getStudent() != null ? t.getStudent().getStudentId() : ""),
+                                t.getTransactionType(),
+                                escapeCSV(t.getCategory()),
+                                escapeCSV(t.getDescription()),
+                                t.getAmount(),
+                                t.getBalanceAfter() != null ? t.getBalanceAfter() : BigDecimal.ZERO,
+                                t.getApproved() ? "Approved" : "Pending"
+                        ));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
-                log.info("Wallet transactions exported to {}", file.getAbsolutePath());
+                log.info("Wallet transactions exported (encrypted) to {}", file.getAbsolutePath());
                 showSuccess("Exported " + transactions.size() + " transactions to:\n" + file.getName());
 
             } catch (Exception e) {

@@ -47,19 +47,34 @@ public class SessionManager {
      * Set the currently logged-in teacher with password for Talk authentication
      *
      * @param teacher The teacher who logged in
-     * @param password The password (stored temporarily for Talk auth)
+     * @param password The password (stored encrypted temporarily for Talk auth)
      */
     public void login(Teacher teacher, String password) {
         login(teacher);
-        this.storedPassword = password;
+        try {
+            com.heronix.teacher.security.HeronixEncryptionService enc =
+                com.heronix.teacher.security.HeronixEncryptionService.getInstance();
+            this.storedPassword = enc.isDisabled() ? password : enc.encryptToBase64(password);
+        } catch (Exception e) {
+            log.warn("Failed to encrypt stored password, storing plaintext", e);
+            this.storedPassword = password;
+        }
     }
 
     /**
      * Get stored password for Talk authentication
-     * @return The password or null if not stored
+     * @return The decrypted password or null if not stored
      */
     public String getStoredPassword() {
-        return storedPassword;
+        if (storedPassword == null) return null;
+        try {
+            com.heronix.teacher.security.HeronixEncryptionService enc =
+                com.heronix.teacher.security.HeronixEncryptionService.getInstance();
+            return enc.isDisabled() ? storedPassword : enc.decryptFromBase64(storedPassword);
+        } catch (Exception e) {
+            log.warn("Failed to decrypt stored password, returning as-is", e);
+            return storedPassword;
+        }
     }
 
     /**

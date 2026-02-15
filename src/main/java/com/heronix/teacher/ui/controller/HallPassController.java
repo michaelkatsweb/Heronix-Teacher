@@ -568,43 +568,45 @@ public class HallPassController {
         fileChooser.setTitle("Export Hall Pass History");
         fileChooser.setInitialFileName("hallpass_history_" +
                 fromDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "_" +
-                toDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
+                toDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".heronix");
         fileChooser.getExtensionFilters().add(
-                new javafx.stage.FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                new javafx.stage.FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         java.io.File file = fileChooser.showSaveDialog(hallPassTable.getScene().getWindow());
 
         if (file != null) {
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(file))) {
-                // BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
-
-                // Header
-                writer.println("Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
-
-                // Data rows
-                for (HallPassRow row : data) {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
-                            escapeCSV(row.getStudentName()),
-                            escapeCSV(row.getDestination()),
-                            row.getTimeOut(),
-                            row.getTimeIn(),
-                            row.getDuration(),
-                            row.getStatus(),
-                            escapeCSV(row.getNotes())));
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (java.io.PrintWriter writer = new java.io.PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
+                    for (HallPassRow row : data) {
+                        writer.println(String.format("%s,%s,%s,%s,%s,%s,%s",
+                                escapeCSV(row.getStudentName()),
+                                escapeCSV(row.getDestination()),
+                                row.getTimeOut(),
+                                row.getTimeIn(),
+                                row.getDuration(),
+                                row.getStatus(),
+                                escapeCSV(row.getNotes())));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
-                log.info("Hall pass history exported to {}", file.getAbsolutePath());
+                log.info("Hall pass history exported (encrypted) to {}", file.getAbsolutePath());
 
                 Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
                 successAlert.setTitle("Export Successful");
                 successAlert.setHeaderText(null);
                 successAlert.setContentText("History exported to:\n" + file.getName() +
-                        "\n\nExported " + data.size() + " records.");
+                        "\n\nExported " + data.size() + " records (encrypted).");
                 successAlert.showAndWait();
 
             } catch (Exception e) {
-                log.error("Error exporting history to CSV", e);
+                log.error("Error exporting history", e);
                 showError("Export Failed", "Failed to export history: " + e.getMessage());
             }
         }
@@ -623,7 +625,7 @@ public class HallPassController {
 
     @FXML
     private void exportPasses() {
-        log.info("Exporting passes to CSV");
+        log.info("Exporting passes (encrypted)");
         statusLabel.setText("Exporting passes...");
 
         if (hallPassData.isEmpty()) {
@@ -635,46 +637,48 @@ public class HallPassController {
         javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
         fileChooser.setTitle("Export Hall Passes");
         fileChooser.setInitialFileName("hallpasses_" +
-                currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
+                currentDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".heronix");
         fileChooser.getExtensionFilters().add(
-                new javafx.stage.FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+                new javafx.stage.FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         java.io.File file = fileChooser.showSaveDialog(hallPassTable.getScene().getWindow());
 
         if (file != null) {
-            try (java.io.PrintWriter writer = new java.io.PrintWriter(new java.io.FileWriter(file))) {
-                // BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
-
-                // Header
-                writer.println("Date,Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
-
-                // Data rows
-                for (HallPassRow row : hallPassData) {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%s,%s",
-                            currentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                            escapeCSV(row.getStudentName()),
-                            escapeCSV(row.getDestination()),
-                            row.getTimeOut(),
-                            row.getTimeIn(),
-                            row.getDuration(),
-                            row.getStatus(),
-                            escapeCSV(row.getNotes())));
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (java.io.PrintWriter writer = new java.io.PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Date,Student Name,Destination,Time Out,Time In,Duration,Status,Notes");
+                    for (HallPassRow row : hallPassData) {
+                        writer.println(String.format("%s,%s,%s,%s,%s,%s,%s,%s",
+                                currentDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                                escapeCSV(row.getStudentName()),
+                                escapeCSV(row.getDestination()),
+                                row.getTimeOut(),
+                                row.getTimeIn(),
+                                row.getDuration(),
+                                row.getStatus(),
+                                escapeCSV(row.getNotes())));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
-                log.info("Hall passes exported to {}", file.getAbsolutePath());
+                log.info("Hall passes exported (encrypted) to {}", file.getAbsolutePath());
 
                 Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
                 successAlert.setTitle("Export Successful");
                 successAlert.setHeaderText(null);
                 successAlert.setContentText("Hall passes exported to:\n" + file.getName() +
-                        "\n\nExported " + hallPassData.size() + " records for " + currentDate);
+                        "\n\nExported " + hallPassData.size() + " records for " + currentDate + " (encrypted)");
                 successAlert.showAndWait();
 
                 statusLabel.setText("Export complete - " + hallPassData.size() + " records");
 
             } catch (Exception e) {
-                log.error("Error exporting passes to CSV", e);
+                log.error("Error exporting passes", e);
                 showError("Export Failed", "Failed to export passes: " + e.getMessage());
                 statusLabel.setText("Export failed");
             }

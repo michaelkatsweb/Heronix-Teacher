@@ -297,10 +297,10 @@ public class GameAnalyticsController {
         }
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save CSV Report");
-        fileChooser.setInitialFileName("play-time-report-" + startDate + "-to-" + endDate + ".csv");
+        fileChooser.setTitle("Save Encrypted Report");
+        fileChooser.setInitialFileName("play-time-report-" + startDate + "-to-" + endDate + ".heronix");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+                new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix")
         );
 
         File file = fileChooser.showSaveDialog(studentTable.getScene().getWindow());
@@ -309,7 +309,7 @@ public class GameAnalyticsController {
         }
 
         loadingIndicator.setVisible(true);
-        statusLabel.setText("Exporting CSV...");
+        statusLabel.setText("Exporting encrypted report...");
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -319,23 +319,24 @@ public class GameAnalyticsController {
                 );
 
                 if (csv != null) {
-                    try (FileWriter writer = new FileWriter(file)) {
-                        writer.write(csv);
-                    }
+                    String originalName = file.getName().replace(".heronix", ".csv");
+                    byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                            .encryptFile(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                    java.nio.file.Files.write(file.toPath(), encrypted);
                     Platform.runLater(() -> {
-                        statusLabel.setText("CSV exported successfully: " + file.getName());
+                        statusLabel.setText("Exported successfully (encrypted): " + file.getName());
                         loadingIndicator.setVisible(false);
                     });
                 } else {
                     Platform.runLater(() -> {
-                        statusLabel.setText("Failed to export CSV");
+                        statusLabel.setText("Failed to export");
                         loadingIndicator.setVisible(false);
                     });
                 }
             } catch (Exception e) {
-                log.error("Error exporting CSV", e);
+                log.error("Error exporting report", e);
                 Platform.runLater(() -> {
-                    statusLabel.setText("Error exporting CSV: " + e.getMessage());
+                    statusLabel.setText("Error exporting: " + e.getMessage());
                     loadingIndicator.setVisible(false);
                 });
             }

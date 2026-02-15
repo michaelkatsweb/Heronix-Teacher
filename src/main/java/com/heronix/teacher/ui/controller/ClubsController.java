@@ -695,24 +695,31 @@ public class ClubsController {
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Club Members");
-        fileChooser.setInitialFileName(club.getName().replaceAll("[^a-zA-Z0-9]", "_") + "_members.csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        fileChooser.setInitialFileName(club.getName().replaceAll("[^a-zA-Z0-9]", "_") + "_members.heronix");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix"));
 
         File file = fileChooser.showSaveDialog(clubsTable.getScene().getWindow());
 
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                writer.write('\ufeff');
-                writer.println("Student Name,Student ID,Grade Level,Email");
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Student Name,Student ID,Grade Level,Email");
 
-                for (Student s : members) {
-                    writer.println(String.format("%s,%s,%d,%s",
-                            escapeCSV(s.getFullName()),
-                            s.getStudentId(),
-                            s.getGradeLevel(),
-                            s.getEmail() != null ? s.getEmail() : ""
-                    ));
+                    for (Student s : members) {
+                        writer.println(String.format("%s,%s,%d,%s",
+                                escapeCSV(s.getFullName()),
+                                s.getStudentId(),
+                                s.getGradeLevel(),
+                                s.getEmail() != null ? s.getEmail() : ""
+                        ));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
                 showSuccess("Exported " + members.size() + " members to:\n" + file.getName());
             } catch (Exception e) {
@@ -880,7 +887,7 @@ public class ClubsController {
      */
     @FXML
     public void handleExport() {
-        log.info("Exporting clubs data to CSV");
+        log.info("Exporting clubs data (encrypted)");
 
         if (clubs.isEmpty()) {
             showWarning("No clubs to export");
@@ -890,40 +897,42 @@ public class ClubsController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export Clubs Data");
         fileChooser.setInitialFileName("clubs_export_" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv");
-        fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("CSV Files", "*.csv"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".heronix");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Encrypted Files", "*.heronix")
         );
 
         File file = fileChooser.showSaveDialog(clubsTable.getScene().getWindow());
 
         if (file != null) {
-            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-                // Write BOM for Excel UTF-8 compatibility
-                writer.write('\ufeff');
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter();
+                try (PrintWriter writer = new PrintWriter(sw)) {
+                    writer.write('\ufeff');
+                    writer.println("Club Name,Category,Advisor,Meeting Day,Meeting Time,Location,Current Enrollment,Max Capacity,Available Spots,Status,Description");
 
-                // Header
-                writer.println("Club Name,Category,Advisor,Meeting Day,Meeting Time,Location,Current Enrollment,Max Capacity,Available Spots,Status,Description");
-
-                // Data rows
-                for (Club club : clubs) {
-                    writer.println(String.format("%s,%s,%s,%s,%s,%s,%d,%d,%d,%s,%s",
-                            escapeCSV(club.getName()),
-                            escapeCSV(club.getCategory()),
-                            escapeCSV(club.getAdvisorName()),
-                            escapeCSV(club.getMeetingDay()),
-                            club.getMeetingTime() != null ? club.getMeetingTime().format(TIME_FORMATTER) : "",
-                            escapeCSV(club.getLocation()),
-                            club.getCurrentEnrollment() != null ? club.getCurrentEnrollment() : 0,
-                            club.getMaxCapacity() != null ? club.getMaxCapacity() : 0,
-                            club.getAvailableSpots(),
-                            club.getActive() ? "Active" : "Inactive",
-                            escapeCSV(club.getDescription())
-                    ));
+                    for (Club club : clubs) {
+                        writer.println(String.format("%s,%s,%s,%s,%s,%s,%d,%d,%d,%s,%s",
+                                escapeCSV(club.getName()),
+                                escapeCSV(club.getCategory()),
+                                escapeCSV(club.getAdvisorName()),
+                                escapeCSV(club.getMeetingDay()),
+                                club.getMeetingTime() != null ? club.getMeetingTime().format(TIME_FORMATTER) : "",
+                                escapeCSV(club.getLocation()),
+                                club.getCurrentEnrollment() != null ? club.getCurrentEnrollment() : 0,
+                                club.getMaxCapacity() != null ? club.getMaxCapacity() : 0,
+                                club.getAvailableSpots(),
+                                club.getActive() ? "Active" : "Inactive",
+                                escapeCSV(club.getDescription())
+                        ));
+                    }
                 }
+                String originalName = file.getName().replace(".heronix", ".csv");
+                byte[] encrypted = com.heronix.teacher.security.HeronixEncryptionService.getInstance()
+                        .encryptFile(sw.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), originalName);
+                java.nio.file.Files.write(file.toPath(), encrypted);
 
-                log.info("Clubs data exported to {}", file.getAbsolutePath());
+                log.info("Clubs data exported (encrypted) to {}", file.getAbsolutePath());
                 showSuccess("Exported " + clubs.size() + " clubs to:\n" + file.getName());
 
             } catch (Exception e) {

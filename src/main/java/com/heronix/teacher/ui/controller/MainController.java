@@ -20,6 +20,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import lombok.RequiredArgsConstructor;
@@ -915,6 +916,45 @@ public class MainController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Open and decrypt a .heronix encrypted export file
+     */
+    @FXML
+    public void handleOpenEncryptedExport() {
+        log.info("Open encrypted export triggered");
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Encrypted Export");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Heronix Encrypted Files", "*.heronix")
+        );
+
+        Stage stage = (Stage) contentArea.getScene().getWindow();
+        java.io.File file = fileChooser.showOpenDialog(stage);
+        if (file == null) return;
+
+        try {
+            byte[] encryptedData = java.nio.file.Files.readAllBytes(file.toPath());
+            com.heronix.teacher.security.HeronixEncryptionService.DecryptedFile decrypted =
+                com.heronix.teacher.security.HeronixEncryptionService.getInstance().decryptFile(encryptedData);
+
+            // Save dialog with original filename
+            FileChooser saveChooser = new FileChooser();
+            saveChooser.setTitle("Save Decrypted File");
+            saveChooser.setInitialFileName(decrypted.getOriginalName());
+            java.io.File saveFile = saveChooser.showSaveDialog(stage);
+
+            if (saveFile != null) {
+                java.nio.file.Files.write(saveFile.toPath(), decrypted.getContent());
+                updateStatusMessage("File decrypted: " + decrypted.getOriginalName());
+                log.info("Decrypted file saved: {}", saveFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("Failed to decrypt file", e);
+            showError("Decryption Error", "Failed to decrypt file:\n" + e.getMessage());
+        }
     }
 
     /**

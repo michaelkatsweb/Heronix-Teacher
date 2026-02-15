@@ -2,6 +2,7 @@ package com.heronix.teacher;
 
 import com.heronix.teacher.model.domain.Teacher;
 import com.heronix.teacher.repository.TeacherRepository;
+import com.heronix.teacher.security.HeronixEncryptionService;
 import com.heronix.teacher.service.SessionManager;
 import com.heronix.teacher.util.ThemeManager;
 import javafx.application.Application;
@@ -65,6 +66,9 @@ public class HeronixTeacherApplication extends Application {
      */
     @Override
     public void init() {
+        log.info("Initializing encryption...");
+        HeronixEncryptionService.initialize();
+
         log.info("Initializing Spring Boot context...");
         springContext = SpringApplication.run(HeronixTeacherApplication.class);
         log.info("Spring Boot context initialized successfully");
