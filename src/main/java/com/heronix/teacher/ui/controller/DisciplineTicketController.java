@@ -2,6 +2,7 @@ package com.heronix.teacher.ui.controller;
 
 import com.heronix.teacher.model.DisciplinePromptTemplate;
 import com.heronix.teacher.model.domain.Student;
+import com.heronix.teacher.model.dto.ClassRosterDTO;
 import com.heronix.teacher.repository.StudentRepository;
 import com.heronix.teacher.service.AdminApiClient;
 import com.heronix.teacher.service.SessionManager;
@@ -39,6 +40,7 @@ public class DisciplineTicketController {
     private final StudentRepository studentRepository;
 
     // Student search
+    @FXML private ComboBox<String> periodFilterCombo;
     @FXML private TextField studentSearchField;
     @FXML private ListView<Student> studentListView;
     @FXML private VBox selectedStudentCard;
@@ -78,6 +80,8 @@ public class DisciplineTicketController {
     private DisciplinePromptTemplate selectedTemplate;
     private final ObservableList<RecentSubmission> recentSubmissions = FXCollections.observableArrayList();
     private List<Student> allStudents = new ArrayList<>();
+    private Map<Integer, ClassRosterDTO> periodRosters = new HashMap<>();
+    private List<Student> periodFilteredStudents = new ArrayList<>();
 
     private static final String[] POSITIVE_CATEGORIES = {
             "PARTICIPATION", "COLLABORATION", "LEADERSHIP", "IMPROVEMENT", "HELPING_OTHERS", "OTHER"
@@ -108,6 +112,10 @@ public class DisciplineTicketController {
 
         // Load students in background
         loadStudents();
+
+        // Load period rosters for filtering
+        setupPeriodFilter();
+        loadPeriodsAndRosters();
 
         log.info("DisciplineTicketController initialized");
     }
@@ -214,18 +222,9 @@ public class DisciplineTicketController {
             }
         });
 
-        // Filter on typing
+        // Filter on typing (searches within period-filtered students)
         studentSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal == null || newVal.trim().isEmpty()) {
-                studentListView.setItems(FXCollections.observableArrayList(allStudents));
-            } else {
-                String query = newVal.toLowerCase().trim();
-                List<Student> filtered = allStudents.stream()
-                        .filter(s -> s.getFullName().toLowerCase().contains(query)
-                                || (s.getStudentId() != null && s.getStudentId().toLowerCase().contains(query)))
-                        .collect(Collectors.toList());
-                studentListView.setItems(FXCollections.observableArrayList(filtered));
-            }
+            filterAndDisplayStudents();
         });
 
         // Select student on click
@@ -253,6 +252,7 @@ public class DisciplineTicketController {
                 List<Student> students = studentRepository.findByActiveTrue();
                 if (students != null && !students.isEmpty()) {
                     allStudents = new ArrayList<>(students);
+                    periodFilteredStudents = new ArrayList<>(allStudents);
                     Platform.runLater(() -> {
                         studentListView.setItems(FXCollections.observableArrayList(allStudents));
                         log.info("Loaded {} active students from local database", allStudents.size());
@@ -272,6 +272,7 @@ public class DisciplineTicketController {
                             s.setEmail(dto.getEmail());
                             return s;
                         }).collect(Collectors.toList());
+                        periodFilteredStudents = new ArrayList<>(allStudents);
                         Platform.runLater(() -> {
                             studentListView.setItems(FXCollections.observableArrayList(allStudents));
                             log.info("Loaded {} students from API", allStudents.size());
@@ -329,6 +330,11 @@ public class DisciplineTicketController {
         Long studentId = selectedStudent.getServerId() != null ? selectedStudent.getServerId() : selectedStudent.getId();
         data.put("studentId", studentId);
         data.put("reportingTeacherId", adminApiClient.getTeacherId());
+        // Include courseId if a specific period is selected
+        ClassRosterDTO selectedRoster = getSelectedRoster();
+        if (selectedRoster != null && selectedRoster.getCourseId() != null) {
+            data.put("courseId", selectedRoster.getCourseId());
+        }
         data.put("incidentDate", incidentDatePicker.getValue().toString());
         data.put("incidentTime", incidentTimeField.getText() + ":00");
         data.put("behaviorType", behaviorTypeCombo.getValue());
@@ -389,6 +395,7 @@ public class DisciplineTicketController {
     }
 
     private void clearForm() {
+        periodFilterCombo.getSelectionModel().selectFirst();
         behaviorTypeCombo.setValue("NEGATIVE");
         categoryCombo.setValue(null);
         categoryCombo.setItems(FXCollections.observableArrayList(NEGATIVE_CATEGORIES));
@@ -405,6 +412,106 @@ public class DisciplineTicketController {
         placeholderHint.setVisible(false);
         placeholderHint.setManaged(false);
         selectedTemplate = null;
+    }
+
+    private void setupPeriodFilter() {
+        periodFilterCombo.getItems().add("All Students");
+        periodFilterCombo.getSelectionModel().selectFirst();
+
+        periodFilterCombo.setOnAction(e -> {
+            String selected = periodFilterCombo.getValue();
+            if (selected == null || "All Students".equals(selected)) {
+                periodFilteredStudents = new ArrayList<>(allStudents);
+            } else {
+                // Extract period number from the display string "Period X — CourseName"
+                ClassRosterDTO roster = getSelectedRoster();
+                if (roster != null && roster.getStudents() != null) {
+                    Set<Long> rosterStudentIds = roster.getStudents().stream()
+                            .map(ClassRosterDTO.RosterStudentDTO::getStudentId)
+                            .collect(Collectors.toSet());
+                    Set<String> rosterStudentNumbers = roster.getStudents().stream()
+                            .map(ClassRosterDTO.RosterStudentDTO::getStudentNumber)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    periodFilteredStudents = allStudents.stream()
+                            .filter(s -> rosterStudentIds.contains(s.getServerId())
+                                    || rosterStudentNumbers.contains(s.getStudentId()))
+                            .collect(Collectors.toList());
+                } else {
+                    periodFilteredStudents = new ArrayList<>(allStudents);
+                }
+            }
+            filterAndDisplayStudents();
+        });
+    }
+
+    private ClassRosterDTO getSelectedRoster() {
+        String selected = periodFilterCombo.getValue();
+        if (selected == null || "All Students".equals(selected)) {
+            return null;
+        }
+        for (Map.Entry<Integer, ClassRosterDTO> entry : periodRosters.entrySet()) {
+            ClassRosterDTO roster = entry.getValue();
+            String display = buildPeriodDisplay(entry.getKey(), roster);
+            if (display.equals(selected)) {
+                return roster;
+            }
+        }
+        return null;
+    }
+
+    private String buildPeriodDisplay(Integer period, ClassRosterDTO roster) {
+        String periodLabel = roster.getPeriodDisplay() != null ? roster.getPeriodDisplay() : "Period " + period;
+        return periodLabel + " \u2014 " + roster.getCourseName();
+    }
+
+    private void filterAndDisplayStudents() {
+        String query = studentSearchField.getText();
+        if (query == null || query.trim().isEmpty()) {
+            studentListView.setItems(FXCollections.observableArrayList(periodFilteredStudents));
+        } else {
+            String lowerQuery = query.toLowerCase().trim();
+            List<Student> filtered = periodFilteredStudents.stream()
+                    .filter(s -> s.getFullName().toLowerCase().contains(lowerQuery)
+                            || (s.getStudentId() != null && s.getStudentId().toLowerCase().contains(lowerQuery)))
+                    .collect(Collectors.toList());
+            studentListView.setItems(FXCollections.observableArrayList(filtered));
+        }
+    }
+
+    private void loadPeriodsAndRosters() {
+        new Thread(() -> {
+            try {
+                String employeeId = sessionManager.getCurrentEmployeeId();
+                if (employeeId == null) {
+                    log.warn("No employee ID available, skipping roster load");
+                    return;
+                }
+                Map<Integer, ClassRosterDTO> rosters = adminApiClient.getAllRosters(employeeId);
+                if (rosters != null && !rosters.isEmpty()) {
+                    periodRosters = rosters;
+                    List<String> periodItems = new ArrayList<>();
+                    periodItems.add("All Students");
+                    rosters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .forEach(entry -> periodItems.add(buildPeriodDisplay(entry.getKey(), entry.getValue())));
+
+                    Platform.runLater(() -> {
+                        String currentSelection = periodFilterCombo.getValue();
+                        periodFilterCombo.getItems().setAll(periodItems);
+                        if (currentSelection != null && periodItems.contains(currentSelection)) {
+                            periodFilterCombo.setValue(currentSelection);
+                        } else {
+                            periodFilterCombo.getSelectionModel().selectFirst();
+                        }
+                        log.info("Loaded {} period rosters for teacher", rosters.size());
+                    });
+                }
+            } catch (Exception e) {
+                log.error("Failed to load period rosters", e);
+            }
+        }).start();
     }
 
     private void showFeedback(String message, boolean isError) {

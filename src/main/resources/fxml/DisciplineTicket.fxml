@@ -31,6 +31,9 @@
         <VBox spacing="10" prefWidth="280" style="-fx-padding: 0 15 0 0;">
             <Label text="Select Student" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
 
+            <Label text="Filter by Period" styleClass="text-secondary" style="-fx-font-size: 11px;"/>
+            <ComboBox fx:id="periodFilterCombo" maxWidth="Infinity" promptText="All Students"/>
+
             <TextField fx:id="studentSearchField" promptText="Search by name or ID..."
                        styleClass="search-field"/>
 
