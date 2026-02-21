@@ -38,9 +38,10 @@ public class NetworkMonitorService {
      * Check if network is available and server is reachable
      */
     public boolean isNetworkAvailable() {
+        HttpURLConnection connection = null;
         try {
             URL url = new URL(adminServerUrl + "/api/health");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(timeoutSeconds * 1000);
             connection.setReadTimeout(timeoutSeconds * 1000);
@@ -55,12 +56,13 @@ public class NetworkMonitorService {
                 onNetworkUnavailable();
             }
 
-            connection.disconnect();
             return isAvailable;
 
         } catch (Exception e) {
             onNetworkUnavailable();
             return false;
+        } finally {
+            if (connection != null) connection.disconnect();
         }
     }
 
