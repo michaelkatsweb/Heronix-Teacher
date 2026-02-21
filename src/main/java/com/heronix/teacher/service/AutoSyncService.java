@@ -101,10 +101,10 @@ public class AutoSyncService {
     private static final int CIRCUIT_BREAKER_THRESHOLD = 5;
     private static final long INITIAL_COOLDOWN_MS = 60_000;       // 60 seconds
     private static final long MAX_COOLDOWN_MS = 5 * 60_000;       // 5 minutes
-    private int consecutiveFailures = 0;
-    private boolean circuitOpen = false;
-    private long circuitOpenedAt = 0;
-    private long currentCooldownMs = INITIAL_COOLDOWN_MS;
+    private volatile int consecutiveFailures = 0;
+    private volatile boolean circuitOpen = false;
+    private volatile long circuitOpenedAt = 0;
+    private volatile long currentCooldownMs = INITIAL_COOLDOWN_MS;
 
     /**
      * Initialize auto-sync service

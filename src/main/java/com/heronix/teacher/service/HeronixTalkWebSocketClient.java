@@ -54,15 +54,15 @@ public class HeronixTalkWebSocketClient implements WebSocket.Listener {
     private volatile long lastPongReceived = System.currentTimeMillis();
 
     // Message handlers
-    private Consumer<TalkMessageDTO> onMessageReceived;
-    private Consumer<java.util.List<TalkMessageDTO>> onHistoryReceived;
-    private Consumer<ChatWsMessage> onTypingIndicator;
-    private Consumer<ChatWsMessage> onPresenceUpdate;
-    private Consumer<Boolean> onConnectionStateChange;
-    private Consumer<String> onError;
-    private Consumer<TalkNewsItemDTO> onNewsReceived;
-    private Consumer<TalkAlertDTO> onAlertReceived;
-    private Consumer<TalkChannelInvitationDTO> onInvitationReceived;
+    private volatile Consumer<TalkMessageDTO> onMessageReceived;
+    private volatile Consumer<java.util.List<TalkMessageDTO>> onHistoryReceived;
+    private volatile Consumer<ChatWsMessage> onTypingIndicator;
+    private volatile Consumer<ChatWsMessage> onPresenceUpdate;
+    private volatile Consumer<Boolean> onConnectionStateChange;
+    private volatile Consumer<String> onError;
+    private volatile Consumer<TalkNewsItemDTO> onNewsReceived;
+    private volatile Consumer<TalkAlertDTO> onAlertReceived;
+    private volatile Consumer<TalkChannelInvitationDTO> onInvitationReceived;
 
     // Message buffer for building multi-part messages
     private final StringBuilder messageBuffer = new StringBuilder();

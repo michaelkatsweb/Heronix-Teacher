@@ -27,12 +27,12 @@ public class AdminApiClient {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final String baseUrl;
-    private String authToken;
-    private String refreshToken;
-    private String storedEmployeeId;
-    private String storedPassword;
-    private Long teacherId;  // Stored from authentication response
-    private String teacherName;  // Stored from authentication response
+    private volatile String authToken;
+    private volatile String refreshToken;
+    private volatile String storedEmployeeId;
+    private volatile String storedPassword;
+    private volatile Long teacherId;  // Stored from authentication response
+    private volatile String teacherName;  // Stored from authentication response
 
     public AdminApiClient(
             ObjectMapper objectMapper,

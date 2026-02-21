@@ -26,9 +26,9 @@ public class HeronixTalkApiClient {
     private final ObjectMapper objectMapper;
     private final String baseUrl;
     private final String[] fallbackUrls;
-    private String sessionToken;
-    private TalkUserDTO currentUser;
-    private String activeBaseUrl;
+    private volatile String sessionToken;
+    private volatile TalkUserDTO currentUser;
+    private volatile String activeBaseUrl;
 
     public HeronixTalkApiClient(
             ObjectMapper objectMapper,
@@ -1141,6 +1141,9 @@ public class HeronixTalkApiClient {
      * Update user preferences/settings
      */
     public TalkUserDTO updateUserPreferences(Boolean notificationsEnabled, Boolean soundEnabled, String statusMessage) throws Exception {
+        if (currentUser == null) {
+            throw new IllegalStateException("Not authenticated — currentUser is null");
+        }
         var payload = new java.util.HashMap<String, Object>();
         if (notificationsEnabled != null) payload.put("notificationsEnabled", notificationsEnabled);
         if (soundEnabled != null) payload.put("soundEnabled", soundEnabled);

@@ -55,7 +55,7 @@ public class HallPassSyncService {
     private int syncIntervalSeconds;
 
     private LocalDateTime lastSyncTime;
-    private boolean syncInProgress = false;
+    private volatile boolean syncInProgress = false;
 
     // ==================== Sync Operations ====================
 
