@@ -16,11 +16,11 @@ import java.awt.TrayIcon.MessageType;
 public class DesktopNotificationService {
 
     private TrayIcon trayIcon;
-    private boolean systemTraySupported = false;
-    private boolean enabled = true;
-    private boolean showMessageNotifications = true;
-    private boolean showAlertNotifications = true;
-    private boolean showNewsNotifications = true;
+    private volatile boolean systemTraySupported = false;
+    private volatile boolean enabled = true;
+    private volatile boolean showMessageNotifications = true;
+    private volatile boolean showAlertNotifications = true;
+    private volatile boolean showNewsNotifications = true;
 
     public DesktopNotificationService() {
         initializeSystemTray();

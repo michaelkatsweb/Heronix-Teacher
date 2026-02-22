@@ -26,36 +26,36 @@ public class CommunicationService {
     private final ScheduledExecutorService heartbeatScheduler;
 
     @Getter
-    private boolean initialized = false;
+    private volatile boolean initialized = false;
 
     @Getter
-    private boolean connected = false;
+    private volatile boolean connected = false;
 
     // UI callbacks (run on JavaFX thread)
-    private Consumer<TalkMessageDTO> onMessageReceived;
-    private Consumer<List<TalkMessageDTO>> onHistoryReceived;
-    private Consumer<List<TalkChannelDTO>> onChannelsUpdated;
-    private Consumer<List<TalkUserDTO>> onUsersUpdated;
-    private Consumer<ChatWsMessage> onTypingIndicator;
-    private Consumer<ChatWsMessage> onPresenceUpdate;
-    private Consumer<Boolean> onConnectionStateChange;
-    private Consumer<String> onError;
-    private Consumer<TalkNewsItemDTO> onNewsReceived;
-    private Consumer<List<TalkNewsItemDTO>> onNewsUpdated;
-    private Consumer<TalkAlertDTO> onAlertReceived;
-    private Consumer<TalkChannelInvitationDTO> onInvitationReceived;
+    private volatile Consumer<TalkMessageDTO> onMessageReceived;
+    private volatile Consumer<List<TalkMessageDTO>> onHistoryReceived;
+    private volatile Consumer<List<TalkChannelDTO>> onChannelsUpdated;
+    private volatile Consumer<List<TalkUserDTO>> onUsersUpdated;
+    private volatile Consumer<ChatWsMessage> onTypingIndicator;
+    private volatile Consumer<ChatWsMessage> onPresenceUpdate;
+    private volatile Consumer<Boolean> onConnectionStateChange;
+    private volatile Consumer<String> onError;
+    private volatile Consumer<TalkNewsItemDTO> onNewsReceived;
+    private volatile Consumer<List<TalkNewsItemDTO>> onNewsUpdated;
+    private volatile Consumer<TalkAlertDTO> onAlertReceived;
+    private volatile Consumer<TalkChannelInvitationDTO> onInvitationReceived;
 
     // Cached data
     @Getter
-    private List<TalkChannelDTO> channels = new ArrayList<>();
+    private volatile List<TalkChannelDTO> channels = new ArrayList<>();
 
     @Getter
-    private List<TalkUserDTO> users = new ArrayList<>();
+    private volatile List<TalkUserDTO> users = new ArrayList<>();
 
     @Getter
-    private List<TalkNewsItemDTO> newsItems = new ArrayList<>();
+    private volatile List<TalkNewsItemDTO> newsItems = new ArrayList<>();
 
-    private ScheduledFuture<?> heartbeatTask;
+    private volatile ScheduledFuture<?> heartbeatTask;
 
     public CommunicationService(HeronixTalkApiClient apiClient, HeronixTalkWebSocketClient wsClient,
                                 NotificationSoundService soundService,

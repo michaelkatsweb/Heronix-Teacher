@@ -20,12 +20,12 @@ import java.time.LocalDateTime;
 @Slf4j
 public class SessionManager {
 
-    private Teacher currentTeacher;
-    private LocalDateTime loginTime;
-    private LocalDateTime lastActivityTime;
+    private volatile Teacher currentTeacher;
+    private volatile LocalDateTime loginTime;
+    private volatile LocalDateTime lastActivityTime;
 
     // Stored password for Talk authentication (cleared on logout)
-    private String storedPassword;
+    private volatile String storedPassword;
 
     // Session timeout: 8 hours (full school day)
     private static final int SESSION_TIMEOUT_HOURS = 8;

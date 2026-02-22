@@ -44,10 +44,10 @@ public class NotificationSoundService {
     private final Map<SoundType, AudioClip> audioClips = new EnumMap<>(SoundType.class);
 
     @Getter
-    private boolean soundEnabled = true;
+    private volatile boolean soundEnabled = true;
 
     @Getter
-    private double volume = 0.7; // 0.0 to 1.0
+    private volatile double volume = 0.7; // 0.0 to 1.0
 
     @PostConstruct
     public void init() {

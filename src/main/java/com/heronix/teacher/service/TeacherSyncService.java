@@ -66,10 +66,10 @@ public class TeacherSyncService {
 
     private ScheduledExecutorService scheduler;
     private JdbcTemplate adminJdbcTemplate;
-    private boolean isRunning = false;
-    private long lastSyncTime = 0;
-    private int totalTeachersSynced = 0;
-    private int failedSyncAttempts = 0;
+    private volatile boolean isRunning = false;
+    private volatile long lastSyncTime = 0;
+    private volatile int totalTeachersSynced = 0;
+    private volatile int failedSyncAttempts = 0;
 
     /**
      * Initialize teacher sync service
