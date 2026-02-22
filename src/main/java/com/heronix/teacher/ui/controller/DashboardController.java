@@ -1151,13 +1151,11 @@ public class DashboardController {
 
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
-            try {
-                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
                 String headerLine = reader.readLine();
 
                 if (headerLine == null) {
                     showError("Empty file - no data to import");
-                    reader.close();
                     return;
                 }
 
@@ -1185,8 +1183,6 @@ public class DashboardController {
                     }
                 }
 
-                reader.close();
-
                 showInfo("Import Complete",
                         String.format("Processed %d lines:\n• Imported: %d\n• Errors: %d\n\n" +
                                         "Note: Grade data imported successfully. Please sync with the server to apply changes.",
@@ -1212,13 +1208,11 @@ public class DashboardController {
 
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
-            try {
-                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file));
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
                 String headerLine = reader.readLine();
 
                 if (headerLine == null) {
                     showError("Empty file - no data to import");
-                    reader.close();
                     return;
                 }
 
@@ -1244,8 +1238,6 @@ public class DashboardController {
                         log.warn("Error importing line {}: {}", lineCount, e.getMessage());
                     }
                 }
-
-                reader.close();
 
                 showInfo("Import Complete",
                         String.format("Processed %d lines:\n• Imported: %d\n• Errors: %d\n\n" +
